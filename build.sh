@@ -37,4 +37,6 @@ fi
 printf "Compiling packages and dependencies...\n"
 go build -v -ldflags -s
 
+go test
+
 exit $?

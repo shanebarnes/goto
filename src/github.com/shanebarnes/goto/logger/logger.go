@@ -1,38 +1,37 @@
 package logger
 
 import (
+    "io"
     "log"
     "os"
     "sync"
 )
 
-var writer io.Writer = os.Stdout
+var flags int = log.Ldate | log.Ltime | log.Lmicroseconds
 var logger *log.Logger = nil
 var once sync.Once
+var writer io.Writer = os.Stdout
 
-func getLoggerInstance() *log.Logger {
+func getLogger() *log.Logger {
     once.Do(func() {
-        flags := log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile
-        file, err := os.OpenFile("scout.log", os.O_APPEND | os.O_CREATE | os.O_RDWR, 0644)
-
-        if err == nil {
-            logger = log.New(file, "", flags)
-        } else {
-            logger = log.New(writer, "", flags)
-        }
-        //defer file.Close()
+        logger = log.New(writer, "", flags)
     })
     return logger
 }
 
-func LoggerDebug(msg string) {
-    getLogInstance().Println("[DEBUG] " + msg)
+func Init(w io.Writer, f int) {
+    writer = w
+    flags = f
 }
 
-func LoggerError(msg string) {
-    getLogInstance().Println("[ERROR] " + msg)
+func DebugLn(msg string) {
+    getLogger().Println("[DBG] " + msg)
 }
 
-func LoggerInfo(msg string) {
-    getLogInstance().Println("[INFO] " + msg)
+func ErrorLn(msg string) {
+    getLogger().Println("[ERR] " + msg)
+}
+
+func InfoLn(msg string) {
+    getLogger().Println("[INF] " + msg)
 }
