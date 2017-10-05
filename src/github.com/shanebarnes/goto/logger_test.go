@@ -8,36 +8,37 @@ import (
     "github.com/stretchr/testify/assert"
 )
 
+var output *bytes.Buffer = new(bytes.Buffer)
+
 func TestLoggerPrintln(t *testing.T) {
     assert := assert.New(t)
-    buf := new(bytes.Buffer)
 
-    logger.Init(buf, 0)
+    logger.Init(output, 0)
 
     logger.Println(logger.Error, "Hello, world!")
-    assert.Equal("[ERR] Hello, world!\n", buf.String())
-    buf.Reset()
+    assert.Equal("[ERR] Hello, world!\n", output.String())
+    output.Reset()
 
     logger.Println(logger.Info, "Hello, world!")
-    assert.Equal("[INF] Hello, world!\n", buf.String())
-    buf.Reset()
+    assert.Equal("[INF] Hello, world!\n", output.String())
+    output.Reset()
 }
 
 func TestLoggerSetLevel(t *testing.T) {
     assert := assert.New(t)
-    buf := new(bytes.Buffer)
 
-    logger.Init(buf, 0)
+    logger.Init(output, 0)
 
     assert.Equal(logger.Info, logger.GetLevel())
 
     logger.Println(logger.Debug, "Hello, world!")
-    assert.Equal("", buf.String())
-    buf.Reset()
+    assert.Equal("", output.String())
+    output.Reset()
 
     logger.SetLevel(logger.Debug)
     assert.Equal(logger.Debug, logger.GetLevel())
 
     logger.Println(logger.Debug, "Hello, world!")
-    assert.Equal("[DBG] Hello, world!\n", buf.String())
+    assert.Equal("[DBG] Hello, world!\n", output.String())
+    output.Reset()
 }

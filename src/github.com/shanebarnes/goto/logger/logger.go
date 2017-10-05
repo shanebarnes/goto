@@ -11,9 +11,11 @@ import (
 type Level int32
 
 const (
-    Debug Level = iota
+    All Level = iota
+    Debug
     Info
     Error
+    None
 )
 
 var flags int = log.Ldate | log.Ltime | log.Lmicroseconds
@@ -45,10 +47,14 @@ func GetLevel() Level {
 }
 
 func Println(lev Level, msg string) {
-    if lev >= GetLevel() {
+    l := GetLevel()
+
+    if lev < None && lev >= l {
         prefix := ""
 
         switch lev {
+        case All:
+            prefix = "[ALL]"
         case Debug:
             prefix = "[DBG]"
         case Info:
