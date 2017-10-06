@@ -15,11 +15,11 @@ func TestLoggerPrintln(t *testing.T) {
 
     logger.Init(output, 0)
 
-    logger.Println(logger.Error, "Hello, world!")
+    logger.PrintlnError("Hello, world!")
     assert.Equal("[ERR] Hello, world!\n", output.String())
     output.Reset()
 
-    logger.Println(logger.Info, "Hello, world!")
+    logger.PrintlnInfo( "Hello, world!")
     assert.Equal("[INF] Hello, world!\n", output.String())
     output.Reset()
 }
@@ -31,14 +31,14 @@ func TestLoggerSetLevel(t *testing.T) {
 
     assert.Equal(logger.Info, logger.GetLevel())
 
-    logger.Println(logger.Debug, "Hello, world!")
+    logger.PrintlnDebug("Hello, world!")
     assert.Equal("", output.String())
     output.Reset()
 
     logger.SetLevel(logger.Debug)
     assert.Equal(logger.Debug, logger.GetLevel())
 
-    logger.Println(logger.Debug, "Hello, world!")
+    logger.PrintlnDebug("Hello, world!")
     assert.Equal("[DBG] Hello, world!\n", output.String())
     output.Reset()
 }

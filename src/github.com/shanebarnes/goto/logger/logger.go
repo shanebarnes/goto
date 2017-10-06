@@ -11,58 +11,71 @@ import (
 type Level int32
 
 const (
-    All Level = iota
-    Debug
+    Debug Level = iota
     Info
     Error
-    None
+    Always
 )
 
-var flags int = log.Ldate | log.Ltime | log.Lmicroseconds
-var level int32 = int32(Info)
-var logger *log.Logger = nil
-var once sync.Once
-var writer io.Writer = os.Stdout
+var loggerFlags     int = log.Ldate | log.Ltime | log.Lmicroseconds
+var loggerLevel     int32 = int32(Info)
+var loggerInstance *log.Logger = nil
+var loggerOnce      sync.Once
+var loggerWriter    io.Writer = os.Stdout
 
 func getLogger() *log.Logger {
-    once.Do(func() {
-        logger = log.New(writer, "", flags)
+    loggerOnce.Do(func() {
+        loggerInstance = log.New(loggerWriter, "", loggerFlags)
     })
-    return logger
+    return loggerInstance
 }
 
-func Init(w io.Writer, f int) {
-    writer = w
-    flags = f
+func Init(writer io.Writer, flags int) {
+    loggerWriter = writer
+    loggerFlags = flags
 }
 
-func SetLevel(l Level) {
-    val := int32(l)
-    atomic.StoreInt32(&level, val)
+func SetLevel(level Level) {
+    atomic.StoreInt32(&loggerLevel, int32(level))
 }
 
 func GetLevel() Level {
-    val := atomic.LoadInt32(&level)
-    return Level(val)
+    return Level(atomic.LoadInt32(&loggerLevel))
 }
 
-func Println(lev Level, msg string) {
-    l := GetLevel()
-
-    if lev < None && lev >= l {
+func println(level Level, msg *string) {
+    if level >= GetLevel() {
         prefix := ""
 
-        switch lev {
-        case All:
-            prefix = "[ALL]"
+        switch level {
         case Debug:
             prefix = "[DBG]"
         case Info:
             prefix = "[INF]"
         case Error:
             prefix = "[ERR]"
+        case Always:
+            prefix = "[ALW]"
         }
 
-        getLogger().Println(prefix, msg)
+        getLogger().Println(prefix, *msg)
     }
 }
+
+func PrintlnDebug(msg string) {
+    println(Debug, &msg)
+}
+
+func PrintlnInfo(msg string) {
+    println(Info, &msg)
+}
+
+func PrintlnError(msg string) {
+    println(Error, &msg)
+}
+
+func PrintlnAlways(msg string) {
+    println(Always, &msg)
+}
+
+
