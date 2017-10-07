@@ -1,8 +1,5 @@
 #!/bin/bash
 
-command -v glide > /dev/null 2>&1
-cmd_glide=$?
-
 set -e
 set -o errtrace
 
@@ -22,21 +19,13 @@ export GOPATH="$script_dir"
 export GOBIN="${GOPATH}/bin"
 #go env
 
-cd "$GOPATH"
-mkdir -p "$GOBIN"
-cd "${GOPATH}/src/github.com/shanebarnes/goto"
-
 printf "Downloading and installing packages and dependencies...\n"
 
-if [ $cmd_glide -eq 0 ]; then
-    glide -y glide.yaml install
-else
-    go get ./...
-fi
+go get -v . 
 
 printf "Compiling packages and dependencies...\n"
-go build -v -ldflags -s
+go build -v ./...
 
-go test
+go test -v ./...
 
 exit $?
