@@ -23,6 +23,10 @@ var loggerInstance *log.Logger = nil
 var loggerOnce      sync.Once
 var loggerWriter    io.Writer = os.Stdout
 
+func GetLevel() Level {
+    return Level(atomic.LoadInt32(&loggerLevel))
+}
+
 func getLogger() *log.Logger {
     loggerOnce.Do(func() {
         loggerInstance = log.New(loggerWriter, "", loggerFlags)
@@ -37,10 +41,6 @@ func Init(writer io.Writer, flags int) {
 
 func SetLevel(level Level) {
     atomic.StoreInt32(&loggerLevel, int32(level))
-}
-
-func GetLevel() Level {
-    return Level(atomic.LoadInt32(&loggerLevel))
 }
 
 func println(level Level, msg *string) {
@@ -62,20 +62,18 @@ func println(level Level, msg *string) {
     }
 }
 
-func PrintlnDebug(msg string) {
-    println(Debug, &msg)
+func PrintlnAlways(msg string) {
+    println(Always, &msg)
 }
 
-func PrintlnInfo(msg string) {
-    println(Info, &msg)
+func PrintlnDebug(msg string) {
+    println(Debug, &msg)
 }
 
 func PrintlnError(msg string) {
     println(Error, &msg)
 }
 
-func PrintlnAlways(msg string) {
-    println(Always, &msg)
+func PrintlnInfo(msg string) {
+    println(Info, &msg)
 }
-
-
