@@ -12,7 +12,7 @@ import (
     "time"
 )
 
-func CreateCert(priv interface{}, notBefore, notAfter time.Time, host string, isCertAuth bool) (*bytes.Buffer, error) {
+func CreateCert(priv interface{}, extKeyUsage x509.ExtKeyUsage, notBefore, notAfter time.Time, host string, isCertAuth bool) (*bytes.Buffer, error) {
     serialNumber, err := generateSerialNumber()
 
     template := x509.Certificate{
@@ -24,7 +24,7 @@ func CreateCert(priv interface{}, notBefore, notAfter time.Time, host string, is
         NotAfter: notAfter,
 
         KeyUsage: x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-        ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+        ExtKeyUsage: []x509.ExtKeyUsage{extKeyUsage},
         BasicConstraintsValid: true,
     }
 

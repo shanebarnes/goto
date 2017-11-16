@@ -1,6 +1,7 @@
 package tls
 
 import (
+    "crypto/x509"
     "testing"
     "time"
 )
@@ -17,7 +18,11 @@ func TestTlscertCreateCert(t *testing.T) {
     priv, _ := GeneratePrivateKey("2048")
     notBefore, notAfter, _ := createCertValidity("", 365 * 24 * time.Hour)
 
-    if _, err := CreateCert(priv, notBefore, notAfter, "localhost,127.0.0.1", false); err != nil {
-        t.Errorf("Certificate generation failed: %s\n", err)
+    if _, err := CreateCert(priv, x509.ExtKeyUsageClientAuth, notBefore, notAfter, "localhost,127.0.0.1", false); err != nil {
+        t.Errorf("Client certificate generation failed: %s\n", err)
+    }
+
+    if _, err := CreateCert(priv, x509.ExtKeyUsageServerAuth, notBefore, notAfter, "localhost,127.0.0.1", false); err != nil {
+        t.Errorf("Server certificate generation failed: %s\n", err)
     }
 }
