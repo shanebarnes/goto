@@ -51,7 +51,7 @@ func CreateCert(priv interface{}, extKeyUsage x509.ExtKeyUsage, notBefore, notAf
     return certOut, err
 }
 
-func createCertValidity(validFrom string, validFor time.Duration) (time.Time, time.Time, error) {
+func CreateCertValidity(validFrom string, validFor time.Duration) (time.Time, time.Time, error) {
     var err error = nil
     var notBefore, notAfter time.Time
 

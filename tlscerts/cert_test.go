@@ -16,7 +16,7 @@ func TestTlscertGenerateSerialNumber(t *testing.T) {
 
 func TestTlscertCreateCert(t *testing.T) {
     priv, _ := GeneratePrivateKey("2048")
-    notBefore, notAfter, _ := createCertValidity("", 365 * 24 * time.Hour)
+    notBefore, notAfter, _ := CreateCertValidity("", 365 * 24 * time.Hour)
 
     if _, err := CreateCert(priv, x509.ExtKeyUsageClientAuth, notBefore, notAfter, "localhost,127.0.0.1", false); err != nil {
         t.Errorf("Client certificate generation failed: %s\n", err)
