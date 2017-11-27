@@ -82,49 +82,49 @@ func TestUnitsToTimeString(t *testing.T) {
     var act, exp string
 
     act = ToTimeString(59)
-    exp = "000y:00m:00d:00h:00m:59.000000s"
+    exp = "0.00:00:59.000000"
     if act != exp {
         t.Errorf("Actual: %s, Expected: %s\n", act, exp)
     }
 
     act = ToTimeString(60)
-    exp = "000y:00m:00d:00h:01m:00.000000s"
+    exp = "0.00:01:00.000000"
     if act != exp {
         t.Errorf("Actual: %s, Expected: %s\n", act, exp)
     }
 
     act = ToTimeString(75)
-    exp = "000y:00m:00d:00h:01m:15.000000s"
+    exp = "0.00:01:15.000000"
     if act != exp {
         t.Errorf("Actual: %s, Expected: %s\n", act, exp)
     }
 
     act = ToTimeString(86399)
-    exp = "000y:00m:00d:23h:59m:59.000000s"
+    exp = "0.23:59:59.000000"
     if act != exp {
         t.Errorf("Actual: %s, Expected: %s\n", act, exp)
     }
 
     act = ToTimeString(86401.123456789)
-    exp = "000y:00m:01d:00h:00m:01.123457s"
+    exp = "1.00:00:01.123457"
     if act != exp {
         t.Errorf("Actual: %s, Expected: %s\n", act, exp)
     }
 
     act = ToTimeString(867600.050)
-    exp = "000y:00m:10d:01h:00m:00.050000s"
+    exp = "10.01:00:00.050000"
     if act != exp {
         t.Errorf("Actual: %s, Expected: %s\n", act, exp)
     }
 
     act = ToTimeString(2680200.000789)
-    exp = "000y:01m:01d:00h:30m:00.000789s"
+    exp = "31.00:30:00.000789"
     if act != exp {
         t.Errorf("Actual: %s, Expected: %s\n", act, exp)
     }
 
     act = ToTimeString(31557600)
-    exp = "001y:00m:00d:00h:00m:00.000000s"
+    exp = "365.06:00:00.000000"
     if act != exp {
         t.Errorf("Actual: %s, Expected: %s\n", act, exp)
     }

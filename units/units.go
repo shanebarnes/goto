@@ -47,15 +47,12 @@ var metricPrefixGe1 = [...]prefix {
     { sym: "Y", val: math.Pow(1000,  8) },
 }
 
-const (
-    SEC_IN_SECOND float64 = 1
-    SEC_IN_MINUTE         = SEC_IN_SECOND *  60
-    SEC_IN_HOUR           = SEC_IN_MINUTE *  60
-    SEC_IN_DAY            = SEC_IN_HOUR   *  24
-    SEC_IN_WEEK           = SEC_IN_DAY    *   7
-    SEC_IN_MONTH          = SEC_IN_DAY    *  30
-    SEC_IN_YEAR           = SEC_IN_DAY    * 365.25
-)
+var timePrefix = [...]prefix {
+    { sym: "%.0f.",   val: 86400 },
+    { sym: "%02.0f:", val:  3600 },
+    { sym: "%02.0f:", val:    60 },
+    { sym: "%09f",    val:     1 },
+}
 
 func ToBinaryString(number float64, precision int, separator, quantity string) string {
     var i int
@@ -124,29 +121,17 @@ func ToMetricString(number float64, precision int, separator, quantity string) s
 
 func ToTimeString(durationSec float64) string {
     n := math.Abs(durationSec)
+    ret := ""
 
-    years := math.Floor(n / SEC_IN_YEAR)
-    n = n - (years * SEC_IN_YEAR)
+    for _, prefix := range timePrefix {
+        f := n
+        if prefix.val > 1 {
+            f = math.Floor(f / prefix.val)
+            n = n - (f * prefix.val)
+        }
 
-    months := math.Floor(n / SEC_IN_MONTH)
-    n = n - (months * SEC_IN_MONTH)
+        ret = ret + fmt.Sprintf(prefix.sym, f)
+    }
 
-    days := math.Floor(n / SEC_IN_DAY)
-    n = n - (days * SEC_IN_DAY)
-
-    hours := math.Floor(n / SEC_IN_HOUR)
-    n = n - (hours * SEC_IN_HOUR)
-
-    minutes := math.Floor(n / SEC_IN_MINUTE)
-    n = n - (minutes * SEC_IN_MINUTE)
-
-    seconds := n
-
-    return fmt.Sprintf("%03.0fy:%02.0fm:%02.0fd:%02.0fh:%02.0fm:%09fs",
-                       years,
-                       months,
-                       days,
-                       hours,
-                       minutes,
-                       seconds)
+    return ret
 }
