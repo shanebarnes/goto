@@ -82,8 +82,8 @@ func println(level Level, v ...interface{}) {
                 prefix = "[ALW]"
             }
 
-            v = append([]interface{}{prefix}, v...)
-            logger.Jam[i].Logger.Println(v...)
+            m := append([]interface{}{prefix}, v...)
+            logger.Jam[i].Logger.Println(m...)
         }
     }
 }
