@@ -3,7 +3,6 @@ package logger
 import (
     "io"
     "log"
-    "os"
     "sync"
     "sync/atomic"
 )
@@ -17,49 +16,75 @@ const (
     Always
 )
 
-var loggerFlags     int = log.Ldate | log.Ltime | log.Lmicroseconds
-var loggerLevel     int32 = int32(Info)
-var loggerInstance *log.Logger = nil
-var loggerOnce      sync.Once
-var loggerWriter    io.Writer = os.Stdout
-
-func GetLevel() Level {
-    return Level(atomic.LoadInt32(&loggerLevel))
+type loggerObject struct {
+    Flags   int
+    Level   int32
+    Logger *log.Logger
+    Writer  io.Writer
 }
 
-func getLogger() *log.Logger {
-    loggerOnce.Do(func() {
-        loggerInstance = log.New(loggerWriter, "", loggerFlags)
+type logger struct {
+    Jam  []loggerObject
+    Once   sync.Once
+}
+
+var instance logger
+
+func GetLevel(index int) Level {
+    var ret Level = Always
+    logger := getLogger()
+
+    if index < len(logger.Jam) {
+        ret = Level(atomic.LoadInt32(&logger.Jam[index].Level))
+    }
+
+    return ret
+}
+
+func getLogger() *logger {
+    instance.Once.Do(func() {
+        for i := range instance.Jam {
+            instance.Jam[i].Logger = log.New(instance.Jam[i].Writer,
+                                             "",
+                                             instance.Jam[i].Flags)
+        }
     })
-    return loggerInstance
+    return &instance
 }
 
-func Init(writer io.Writer, flags int) {
-    loggerWriter = writer
-    loggerFlags = flags
+func Init(flags int, level Level, writer io.Writer) {
+    instance.Jam = append(instance.Jam, loggerObject{ Flags: flags, Level: int32(level), Writer: writer })
 }
 
-func SetLevel(level Level) {
-    atomic.StoreInt32(&loggerLevel, int32(level))
+func SetLevel(index int, level Level) {
+    logger := getLogger()
+
+    if index < len(logger.Jam) {
+        atomic.StoreInt32(&logger.Jam[index].Level, int32(level))
+    }
 }
 
 func println(level Level, v ...interface{}) {
-    if level >= GetLevel() {
-        prefix := ""
+    logger := getLogger()
 
-        switch level {
-        case Debug:
-            prefix = "[DBG]"
-        case Info:
-            prefix = "[INF]"
-        case Error:
-            prefix = "[ERR]"
-        case Always:
-            prefix = "[ALW]"
+    for i := range logger.Jam {
+        if level >= GetLevel(i) {
+            prefix := ""
+
+            switch level {
+            case Debug:
+                prefix = "[DBG]"
+            case Info:
+                prefix = "[INF]"
+            case Error:
+                prefix = "[ERR]"
+            case Always:
+                prefix = "[ALW]"
+            }
+
+            v = append([]interface{}{prefix}, v...)
+            logger.Jam[i].Logger.Println(v...)
         }
-
-        v = append([]interface{}{prefix}, v...)
-        getLogger().Println(v...)
     }
 }
 

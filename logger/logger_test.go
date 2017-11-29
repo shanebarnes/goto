@@ -11,7 +11,7 @@ func TestLoggerInit(t *testing.T) {
     message := "Hello, world!"
     expected := "[INF] Hello, world!\n"
 
-    Init(output, 0)
+    Init(0, Info, output)
     PrintlnInfo(message)
 
     if output.String() != expected {
@@ -25,10 +25,10 @@ func TestLoggerSetLevel(t *testing.T) {
     levels := []Level{ Debug, Info, Error, Always }
 
     for i := range levels {
-        SetLevel(levels[i])
+        SetLevel(0, levels[i])
 
-        if GetLevel() != levels[i] {
-            t.Errorf("Actual: %d, Expected: %d\n", GetLevel(), levels[i])
+        if GetLevel(0) != levels[i] {
+            t.Errorf("Actual: %d, Expected: %d\n", GetLevel(0), levels[i])
         }
     }
 }
@@ -38,12 +38,12 @@ func TestLoggerPrintlnDebug(t *testing.T) {
     expected := "[DBG] Debug\n"
 
     for i := range levels {
-        SetLevel(levels[i])
+        SetLevel(0, levels[i])
         PrintlnDebug("Debug")
 
-        if GetLevel() > Debug && output.String() != "" {
+        if GetLevel(0) > Debug && output.String() != "" {
             t.Errorf("Actual: %s, Expected: %s\n", output.String(), "")
-        } else if GetLevel() <= Debug && output.String() != expected {
+        } else if GetLevel(0) <= Debug && output.String() != expected {
             t.Errorf("Actual: %s, Expected: %s\n", output.String(), expected)
         }
 
@@ -56,12 +56,12 @@ func TestLoggerPrintlnInfo(t *testing.T) {
     expected := "[INF] Info\n"
 
     for i := range levels {
-        SetLevel(levels[i])
+        SetLevel(0, levels[i])
         PrintlnInfo("Info")
 
-        if GetLevel() > Info && output.String() != "" {
+        if GetLevel(0) > Info && output.String() != "" {
             t.Errorf("Actual: %s, Expected: %s\n", output.String(), "")
-        } else if GetLevel() <= Info && output.String() != expected {
+        } else if GetLevel(0) <= Info && output.String() != expected {
             t.Errorf("Actual: %s, Expected: %s\n", output.String(), expected)
         }
 
@@ -74,12 +74,12 @@ func TestLoggerPrintlnError(t *testing.T) {
     expected := "[ERR] Error\n"
 
     for i := range levels {
-        SetLevel(levels[i])
+        SetLevel(0, levels[i])
         PrintlnError("Error")
 
-        if GetLevel() > Error && output.String() != "" {
+        if GetLevel(0) > Error && output.String() != "" {
             t.Errorf("Actual: %s, Expected: %s\n", output.String(), "")
-        } else if GetLevel() <= Error && output.String() != expected {
+        } else if GetLevel(0) <= Error && output.String() != expected {
             t.Errorf("Actual: %s, Expected: %s\n", output.String(), expected)
         }
 
@@ -92,7 +92,7 @@ func TestLoggerPrintlnAlways(t *testing.T) {
     expected := "[ALW] Always\n"
 
     for i := range levels {
-        SetLevel(levels[i])
+        SetLevel(0, levels[i])
         PrintlnAlways("Always")
 
         if output.String() != expected {
