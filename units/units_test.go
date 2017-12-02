@@ -78,6 +78,40 @@ func TestUnitsToMetricString(t *testing.T) {
     }
 }
 
+func TestUnitsToNumber(t *testing.T) {
+    var act, exp float64
+    var err error = nil
+
+    act, _ = ToNumber("123")
+    exp = 123
+    if act != exp {
+        t.Errorf("Actual: %f, Expected: %f\n", act, exp)
+    }
+
+    act, _ = ToNumber("1.048576M")
+    exp = 1048576
+    if act != exp {
+        t.Errorf("Actual: %f, Expected: %f\n", act, exp)
+    }
+
+    act, _ = ToNumber("1.048576 M")
+    exp = 1048576
+    if act != exp {
+        t.Errorf("Actual: %f, Expected: %f\n", act, exp)
+    }
+
+    act, _ = ToNumber("1.048576m")
+    exp = 0.001048576
+    if act != exp {
+        t.Errorf("Actual: %f, Expected: %f\n", act, exp)
+    }
+
+    act, err = ToNumber("1.0A")
+    if err == nil {
+        t.Errorf("Expected error")
+    }
+}
+
 func TestUnitsToTimeString(t *testing.T) {
     var act, exp string
 

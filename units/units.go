@@ -1,9 +1,11 @@
 package units
 
 import (
+    "errors"
     "fmt"
     "math"
     "strconv"
+    "strings"
 )
 
 type prefix struct {
@@ -52,6 +54,56 @@ var timePrefix = [...]prefix {
     { sym: "%02.0f:", val:  3600 },
     { sym: "%02.0f:", val:    60 },
     { sym: "%09f",    val:     1 },
+}
+
+func ToNumber(s string) (float64, error) {
+    var f float64 = 0
+    var p string
+
+    i, err := fmt.Sscanf(s, "%f%s", &f, &p)
+
+    if i == 2 {
+        p = strings.TrimSpace(p)
+        found := false
+
+        switch len(p) {
+        case 0:
+            found = true
+        case 1: // Metric prefix (e.g., k)
+            for i := range metricPrefixGe1 {
+                if metricPrefixGe1[i].sym == p {
+                    f = f * metricPrefixGe1[i].val
+                    found = true
+                    break
+                }
+            }
+
+            if !found {
+            for i := range metricPrefixLt1 {
+                if metricPrefixLt1[i].sym == p {
+                    f = f * metricPrefixLt1[i].val
+                    found = true
+                    break
+                }
+            }
+            }
+        case 2: // Binary prefix (e.g., Ki)
+            for i := range binaryPrefix {
+                if binaryPrefix[i].sym == p {
+                    f = f * binaryPrefix[i].val
+                    found = true
+                    break
+                }
+            }
+        default:
+        }
+
+        if found == false {
+            err = errors.New("Invalid prefix: " + p)
+        }
+    }
+
+    return f, err
 }
 
 func ToBinaryString(number float64, precision int, separator, quantity string) string {
