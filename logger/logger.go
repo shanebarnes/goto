@@ -53,6 +53,25 @@ func getLogger() *logger {
 	return &instance
 }
 
+func getPrefix(level Level) string {
+	prefix := ""
+
+	switch level {
+	case Debug:
+		prefix = "[DBG]"
+	case Info:
+		prefix = "[INF]"
+	case Error:
+		prefix = "[ERR]"
+	case Always:
+		prefix = "[ALW]"
+	default:
+		prefix = "[???]"
+	}
+
+	return prefix
+}
+
 func Init(flags int, level Level, writer io.Writer) {
 	instance.Jam = append(instance.Jam, loggerObject{Flags: flags, Level: int32(level), Writer: writer})
 }
@@ -65,24 +84,23 @@ func SetLevel(index int, level Level) {
 	}
 }
 
+func Printf(level Level, format string, v ...interface{}) {
+	logger := getLogger()
+
+	for i := range logger.Jam {
+		if level >= GetLevel(i) {
+			prefix := getPrefix(level)
+			logger.Jam[i].Logger.Printf(prefix+" "+format, v...)
+		}
+	}
+}
+
 func println(level Level, v ...interface{}) {
 	logger := getLogger()
 
 	for i := range logger.Jam {
 		if level >= GetLevel(i) {
-			prefix := ""
-
-			switch level {
-			case Debug:
-				prefix = "[DBG]"
-			case Info:
-				prefix = "[INF]"
-			case Error:
-				prefix = "[ERR]"
-			case Always:
-				prefix = "[ALW]"
-			}
-
+			prefix := getPrefix(level)
 			m := append([]interface{}{prefix}, v...)
 			logger.Jam[i].Logger.Println(m...)
 		}

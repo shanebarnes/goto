@@ -3,6 +3,7 @@ package logger
 import (
 	"bytes"
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -32,6 +33,22 @@ func TestLoggerSetLevel(t *testing.T) {
 		if GetLevel(0) != levels[i] {
 			t.Errorf("Actual: %d, Expected: %d\n", GetLevel(0), levels[i])
 		}
+	}
+}
+
+func TestLoggerPrintf(t *testing.T) {
+	levels := []Level{Debug, Info, Error, Always}
+
+	for i := range levels {
+		SetLevel(0, levels[i])
+		expected := getPrefix(levels[i]) + " Test " + strconv.FormatInt(int64(levels[i]), 10) + "\n"
+		Printf(levels[i], "%s %d\n", "Test", levels[i])
+
+		if output.String() != expected {
+			t.Errorf("Actual: %s, Expected: %s\n", output.String(), expected)
+		}
+
+		output.Reset()
 	}
 }
 
