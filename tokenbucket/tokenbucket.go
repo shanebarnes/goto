@@ -21,6 +21,23 @@ func New(rate uint64, size uint64) *TokenBucket {
 }
 
 func (tb *TokenBucket) Remove(tokens uint64) uint64 {
+	// A remove is a request that blocks until are tokens to remove are available
+	rv := tb.Request(tokens)
+
+	if rv < tokens {
+		deadline := time.Unix(0, int64(tokens - rv) * int64(time.Second) / int64(tb.rate) + int64(tb.time))
+		duration := time.Until(deadline)
+
+		timer := time.NewTimer(duration)
+		<-timer.C
+
+		rv = rv + tb.Request(tokens - rv)
+	}
+
+	return rv
+}
+
+func (tb *TokenBucket) Request(tokens uint64) uint64 {
 	var rv uint64 = 0
 
 	if tb != nil {
