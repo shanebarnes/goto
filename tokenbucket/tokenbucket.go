@@ -25,13 +25,15 @@ func (tb *TokenBucket) Remove(tokens uint64) uint64 {
 	rv := tb.Request(tokens)
 
 	if rv < tokens {
-		deadline := time.Unix(0, int64(tokens - rv) * int64(time.Second) / int64(tb.rate) + int64(tb.time))
-		duration := time.Until(deadline)
+		if tb.rate > 0 {
+			deadline := time.Unix(0, int64(tokens - rv) * int64(time.Second) / int64(tb.rate) + int64(tb.time))
+			duration := time.Until(deadline)
 
-		timer := time.NewTimer(duration)
-		<-timer.C
+			timer := time.NewTimer(duration)
+			<-timer.C
 
-		rv = rv + tb.Request(tokens - rv)
+			rv = rv + tb.Request(tokens - rv)
+		}
 	}
 
 	return rv
