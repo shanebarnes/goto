@@ -20,7 +20,7 @@ func New(rate uint64, size uint64) *TokenBucket {
 	bucket := new(TokenBucket)
 	bucket.time = time.Now().UnixNano()
 	bucket.rate = rate
-	bucket.fill = 0
+	bucket.fill = size
 	bucket.size = size
 	bucket.wait = time.NewTimer(0 * time.Second)
 
