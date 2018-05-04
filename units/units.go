@@ -2,6 +2,7 @@ package units
 
 import (
     "errors"
+    "io"
     "fmt"
     "math"
     "strconv"
@@ -101,6 +102,8 @@ func ToNumber(s string) (float64, error) {
         if found == false {
             err = errors.New("Invalid prefix: " + p)
         }
+    } else if i == 1 && err == io.EOF {
+        err = nil
     }
 
     return f, err
