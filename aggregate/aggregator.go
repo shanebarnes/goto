@@ -7,12 +7,11 @@ import (
 	"time"
 )
 
-type FuncAdd func(*Aggregator, interface{}, interface{}) interface{}
-
-type table struct {
-	count   uint64
-	funcAdd FuncAdd
-	product interface{}
+// Calculate slope: dY/dX, Calculate Rate: dY/dt?
+type record struct {
+	count   int64
+	max     interface{}
+	min     interface{}
 	sum     interface{}
 	time0   time.Time
 	timeN   time.Time
@@ -20,7 +19,7 @@ type table struct {
 }
 
 type Aggregator struct {
-	db map[string]table
+	db map[string]*record
 }
 
 type Aggregate struct {
@@ -32,7 +31,173 @@ type Aggregate struct {
 }
 
 func NewAggregator() *Aggregator {
-	return &Aggregator{db: make(map[string]table)}
+	return &Aggregator{db: make(map[string]*record)}
+}
+
+func (a *Aggregator) add(x interface{}, y interface{}) interface{} {
+	var sum interface{}
+
+	switch x.(type) {
+	case float64:
+		sum = x.(float64) + y.(float64)
+	case int64:
+		sum = x.(int64) + y.(int64)
+	case uint64:
+		sum = x.(uint64) + y.(uint64)
+	}
+
+	return sum
+}
+
+// Compare two integer interfaces values:
+//   -1: x <  y
+//    0: x == y
+//    1: x >  y
+func (a *Aggregator) compare(x interface{}, y interface{}) int {
+	res := 0
+
+	switch x.(type) {
+	case float64:
+		if x.(float64) < y.(float64) {
+			res = -1
+		} else if x.(float64) > y.(float64) {
+			res = 1
+		}
+	case int64:
+		if x.(int64) < y.(int64) {
+			res = -1
+		} else if x.(int64) > y.(int64) {
+			res = 1
+		}
+	case uint64:
+		if x.(uint64) < y.(uint64) {
+			res = -1
+		} else if x.(uint64) > y.(uint64) {
+			res = 1
+		}
+	}
+
+	return res
+}
+
+func (a *Aggregator) convert(value interface{}) (interface{}, error) {
+	var err error
+	var f interface{}
+
+	switch value.(type) {
+	case float32:
+		f = float64(value.(float32))
+	case float64:
+		f = value.(float64)
+	case int:
+		f = int64(value.(int))
+	case int8:
+		f = int64(value.(int8))
+	case int16:
+		f = int64(value.(int16))
+	case int32:
+		f = int64(value.(int32))
+	case int64:
+		f = int64(value.(int64))
+	case uint:
+		f = int64(value.(uint))
+	case uint8:
+		f = int64(value.(uint8))
+	case uint16:
+		f = int64(value.(uint16))
+	case uint32:
+		f = int64(value.(uint32))
+	case uint64:
+		f = int64(value.(uint64))
+	default:
+		err = syscall.ENOTSUP // Unsupported type
+	}
+
+	return f, err
+}
+
+func (a *Aggregator) Delete(key string) error {
+	var err error
+
+	if _, err = a.findRecord(key); err == nil {
+		delete(a.db, key)
+	}
+
+	return err
+}
+
+func (a *Aggregator) findRecord(key string) (*record, error) {
+	var err error
+
+	rec, ok := a.db[key]
+	if !ok {
+		err = syscall.ENOENT
+	}
+
+	return rec, err
+}
+
+func (a *Aggregator) GetAverage(key string) (interface{}, error) {
+	rec, err := a.findRecord(key)
+	if err == nil {
+		if rec.count > 0 {
+			switch rec.value0.(type) {
+			case float32, float64:
+				return rec.sum.(float64) / float64(rec.count), err
+			case int, int8, int16, int32, int64:
+				return rec.sum.(int64) / rec.count, err
+			case uint, uint8, uint16, uint32, uint64:
+				return rec.sum.(uint64) / uint64(rec.count), err
+			default:
+				err = syscall.ENOTSUP
+			}
+		} else {
+			return rec.sum, err
+		}
+	}
+
+	return nil, err
+}
+
+func (a *Aggregator) GetCount(key string) (int64, error) {
+	rec, err := a.findRecord(key)
+	if err == nil {
+		return rec.count, nil
+	}
+
+	return -1, err
+}
+
+func (a *Aggregator) GetMaximum(key string) (interface{}, error) {
+	var max interface{}
+	rec, err := a.findRecord(key)
+	if err == nil {
+		max = rec.max
+	}
+
+	return max, err
+
+}
+
+func (a *Aggregator) GetMinimum(key string) (interface{}, error) {
+	var min interface{}
+	rec, err := a.findRecord(key)
+	if err == nil {
+		min = rec.min
+	}
+
+	return min, err
+
+}
+
+func (a *Aggregator) GetSum(key string) (interface{}, error) {
+	var sum interface{}
+	rec, err := a.findRecord(key)
+	if err == nil {
+		sum = rec.sum
+	}
+
+	return sum, err
 }
 
 // Protect against overflow?
@@ -44,100 +209,37 @@ func (a *Aggregator) Insert(key string, value interface{}) error {
 
 	if entry, ok := a.db[key]; ok {
 		if reflect.TypeOf(value) == reflect.TypeOf(entry.value0) {
-			entry.count += 1
-			entry.sum = entry.funcAdd(a, entry.sum, value)
-			entry.timeN = now
+			var newValue interface{}
+			if newValue, err = a.convert(value); err == nil {
+				entry.count += 1
+				entry.sum = a.add(entry.sum, newValue)
+				entry.timeN = now
+
+				if a.compare(newValue, entry.min) == -1 {
+					entry.min = newValue
+				}
+
+				if a.compare(newValue, entry.max) == 1 {
+					entry.max = newValue
+				}
+			}
 		} else {
-			err = syscall.EINVAL  // Type mismatch
+			err = syscall.EINVAL  // Invalid type
 		}
 	} else {
-		if adder := a.getAdder(value); adder == nil {
-			err = syscall.ENOTSUP
-		} else {
-			a.db[key] = table{count: 1, funcAdd: adder, sum: value, time0: now, timeN: now, value0: value}
+		var newValue interface{}
+		if newValue, err = a.convert(value); err == nil {
+			a.db[key] = &record{
+				count: 1,
+				max: newValue,
+				min: newValue,
+				sum: newValue,
+				time0: now,
+				timeN: now,
+				value0: value,
+			}
 		}
 	}
 
 	return err
-}
-
-func (a *Aggregator) addFloat32(x, y interface{}) interface{} {
-	return x.(float32) + y.(float32)
-}
-
-func (a *Aggregator) addFloat64(x, y interface{}) interface{} {
-	return x.(float64) + y.(float64)
-}
-
-func (a *Aggregator) addInt(x, y interface{}) interface{} {
-	return x.(int) + y.(int)
-}
-
-func (a *Aggregator) addInt8(x, y interface{}) interface{} {
-	return x.(int8) + y.(int8)
-}
-
-func (a *Aggregator) addInt16(x, y interface{}) interface{} {
-	return x.(int16) + y.(int16)
-}
-
-func (a *Aggregator) addInt32(x, y interface{}) interface{} {
-	return x.(int32) + y.(int32)
-}
-
-func (a *Aggregator) addInt64(x, y interface{}) interface{} {
-	return x.(int64) + y.(int64)
-}
-
-func (a *Aggregator) addUint(x, y interface{}) interface{} {
-	return x.(uint) + y.(uint)
-}
-
-func (a *Aggregator) addUint8(x, y interface{}) interface{} {
-	return x.(uint8) + y.(uint8)
-}
-
-func (a *Aggregator) addUint16(x, y interface{}) interface{} {
-	return x.(uint16) + y.(uint16)
-}
-
-func (a *Aggregator) addUint32(x, y interface{}) interface{} {
-	return x.(uint32) + y.(uint32)
-}
-
-func (a *Aggregator) addUint64(x, y interface{}) interface{} {
-	return x.(uint64) + y.(uint64)
-}
-
-func (a *Aggregator) getAdder(f interface{}) FuncAdd {
-	var addFunc FuncAdd
-
-	switch f.(type) {
-	case float32:
-		addFunc = (*Aggregator).addFloat32
-	case float64:
-		addFunc = (*Aggregator).addFloat64
-	case int:
-		addFunc = (*Aggregator).addInt
-	case int8:
-		addFunc = (*Aggregator).addInt8
-	case int16:
-		addFunc = (*Aggregator).addInt16
-	case int32:
-		addFunc = (*Aggregator).addInt32
-	case int64:
-		addFunc = (*Aggregator).addInt64
-	case uint:
-		addFunc = (*Aggregator).addUint
-	case uint8:
-		addFunc = (*Aggregator).addUint8
-	case uint16:
-		addFunc = (*Aggregator).addUint16
-	case uint32:
-		addFunc = (*Aggregator).addUint32
-	case uint64:
-		addFunc = (*Aggregator).addUint64
-	}
-
-	return addFunc
 }
