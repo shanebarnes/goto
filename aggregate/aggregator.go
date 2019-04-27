@@ -100,15 +100,15 @@ func (a *Aggregator) convert(value interface{}) (interface{}, error) {
 	case int64:
 		f = int64(value.(int64))
 	case uint:
-		f = int64(value.(uint))
+		f = uint64(value.(uint))
 	case uint8:
-		f = int64(value.(uint8))
+		f = uint64(value.(uint8))
 	case uint16:
-		f = int64(value.(uint16))
+		f = uint64(value.(uint16))
 	case uint32:
-		f = int64(value.(uint32))
+		f = uint64(value.(uint32))
 	case uint64:
-		f = int64(value.(uint64))
+		f = uint64(value.(uint64))
 	default:
 		err = syscall.ENOTSUP // Unsupported type
 	}

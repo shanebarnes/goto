@@ -96,7 +96,7 @@ func TestAggregator_GetMaximum(t *testing.T) {
 	assert.Nil(t, a.Insert(key2, uint16(40)))
 	max, err = a.GetMaximum(key2)
 	assert.Nil(t, err)
-	assert.Equal(t, int64(40), max)
+	assert.Equal(t, uint64(40), max)
 }
 
 func TestAggregator_GetMinimum(t *testing.T) {
@@ -125,7 +125,7 @@ func TestAggregator_GetMinimum(t *testing.T) {
 	assert.Nil(t, a.Insert(key2, uint8(40)))
 	min, err = a.GetMinimum(key2)
 	assert.Nil(t, err)
-	assert.Equal(t, int64(40), min)
+	assert.Equal(t, uint64(40), min)
 }
 
 func TestAggregator_GetSum(t *testing.T) {
