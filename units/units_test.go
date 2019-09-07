@@ -1,165 +1,144 @@
 package units
 
 import (
-    "testing"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUnitsToBinaryString(t *testing.T) {
-    var act, exp string
+	var str string
 
-    act = ToBinaryString(0, 0, "", "B")
-    exp = "0B"
-    if act != exp {
-        t.Errorf("Actual: %s, Expected: %s\n", act, exp)
-    }
+	str = ToBinaryString(0, 0, "", "B")
+	assert.Equal(t, "0B", str)
 
-    act = ToBinaryString(1023, 0, "", "B")
-    exp = "1023B"
-    if act != exp {
-        t.Errorf("Actual: %s, Expected: %s\n", act, exp)
-    }
+	str = ToBinaryString(1023, 0, "", "B")
+	assert.Equal(t, "1023B", str)
 
-    act = ToBinaryString(1024, -1, "", "B")
-    exp = "1KiB"
-    if act != exp {
-        t.Errorf("Actual: %s, Expected: %s\n", act, exp)
-    }
+	str = ToBinaryString(1024, -1, "", "B")
+	assert.Equal(t, "1KiB", str)
 
-    act = ToBinaryString(3.5*1024*1024*1024*1024, -1, "", "B")
-    exp = "3.5TiB"
-    if act != exp {
-        t.Errorf("Actual: %s, Expected: %s\n", act, exp)
-    }
+	str = ToBinaryString(3.5*1024*1024*1024*1024, -1, "", "B")
+	assert.Equal(t, "3.5TiB", str)
+}
+
+func TestUnitsToBinaryStringWithPrefix(t *testing.T) {
+	var str string
+	val := 123456789.
+
+	str = ToBinaryStringWithPrefix(val, 3, " ", "wrong", "B")
+	assert.Equal(t, "117.738 MiB", str)
+
+	str = ToBinaryStringWithPrefix(val, 3, " ", "Ki", "B")
+	assert.Equal(t, "120563.271 KiB", str)
+
+	str = ToBinaryStringWithPrefix(val, 3, " ", "Mi", "B")
+	assert.Equal(t, "117.738 MiB", str)
+
+	str = ToBinaryStringWithPrefix(val, 3, " ", "Gi", "B")
+	assert.Equal(t, "0.115 GiB", str)
 }
 
 func TestUnitsToMetricString(t *testing.T) {
-    var act, exp string
+	var str string
 
-    act = ToMetricString(0.000001, 2, " ", "m")
-    exp = "1.00 um"
-    if act != exp {
-        t.Errorf("Actual: %s, Expected: %s\n", act, exp)
-    }
+	str = ToMetricString(0.000001, 2, " ", "m")
+	assert.Equal(t, "1.00 um", str)
 
-    act = ToMetricString(0.025, 3, " ", "s")
-    exp = "25.000 ms"
-    if act != exp {
-        t.Errorf("Actual: %s, Expected: %s\n", act, exp)
-    }
+	str = ToMetricString(0.025, 3, " ", "s")
+	assert.Equal(t, "25.000 ms", str)
 
-    act = ToMetricString(0, 0, " ", "m")
-    exp = "0 m"
-    if act != exp {
-        t.Errorf("Actual: %s, Expected: %s\n", act, exp)
-    }
+	str = ToMetricString(0, 0, " ", "m")
+	assert.Equal(t, "0 m", str)
 
-    act = ToMetricString(1000, 0, "", "g")
-    exp = "1kg"
-    if act != exp {
-        t.Errorf("Actual: %s, Expected: %s\n", act, exp)
-    }
+	str = ToMetricString(1000, 0, "", "g")
+	assert.Equal(t, "1kg", str)
 
-    act = ToMetricString(500123000, -1, "-", "W")
-    exp = "500.123-MW"
-    if act != exp {
-        t.Errorf("Actual: %s, Expected: %s\n", act, exp)
-    }
+	str = ToMetricString(500123000, -1, "-", "W")
+	assert.Equal(t, "500.123-MW", str)
 
-    act = ToMetricString(1048576, 5, "", "B")
-    exp = "1.04858MB"
-    if act != exp {
-        t.Errorf("Actual: %s, Expected: %s\n", act, exp)
-    }
+	str = ToMetricString(1048576, 5, "", "B")
+	assert.Equal(t, "1.04858MB", str)
 
-    act = ToMetricString(-9020, -1, " ", "N")
-    exp = "-9.02 kN"
-    if act != exp {
-        t.Errorf("Actual: %s, Expected: %s\n", act, exp)
-    }
+	str = ToMetricString(-9020, -1, " ", "N")
+	assert.Equal(t, "-9.02 kN", str)
+}
+
+func TestUnitsToMetricStringWithPrefix(t *testing.T) {
+	var str string
+	val := 123456789.
+
+	str = ToMetricStringWithPrefix(val, 3, " ", "wrong", "W")
+	assert.Equal(t, "123.457 MW", str)
+
+	str = ToMetricStringWithPrefix(val, 3, " ", "m", "W")
+	assert.Equal(t, "123456789000.000 mW", str)
+
+	str = ToMetricStringWithPrefix(val, 3, " ", "u", "W")
+	assert.Equal(t, "123456789000000.000 uW", str)
+
+	str = ToMetricStringWithPrefix(val, 3, " ", "n", "W")
+	assert.Equal(t, "123456789000000000.000 nW", str)
+
+	str = ToMetricStringWithPrefix(val, 3, " ", "k", "W")
+	assert.Equal(t, "123456.789 kW", str)
+
+	str = ToMetricStringWithPrefix(val, 3, " ", "M", "W")
+	assert.Equal(t, "123.457 MW", str)
+
+	str = ToMetricStringWithPrefix(val, 3, " ", "G", "W")
+	assert.Equal(t, "0.123 GW", str)
 }
 
 func TestUnitsToNumber(t *testing.T) {
-    var act, exp float64
-    var err error = nil
+	var f float64
+	var err error
 
-    act, _ = ToNumber("123")
-    exp = 123
-    if act != exp {
-        t.Errorf("Actual: %f, Expected: %f\n", act, exp)
-    }
+	f, err = ToNumber("123")
+	assert.Nil(t, err)
+	assert.Equal(t, 123., f)
 
-    act, _ = ToNumber("1.048576M")
-    exp = 1048576
-    if act != exp {
-        t.Errorf("Actual: %f, Expected: %f\n", act, exp)
-    }
+	f, err = ToNumber("1.048576M")
+	assert.Nil(t, err)
+	assert.Equal(t, 1048576., f)
 
-    act, _ = ToNumber("1.048576 M")
-    exp = 1048576
-    if act != exp {
-        t.Errorf("Actual: %f, Expected: %f\n", act, exp)
-    }
+	f, err = ToNumber("1.048576 M")
+	assert.Nil(t, err)
+	assert.Equal(t, 1048576., f)
 
-    act, _ = ToNumber("1.048576m")
-    exp = 0.001048576
-    if act != exp {
-        t.Errorf("Actual: %f, Expected: %f\n", act, exp)
-    }
+	f, err = ToNumber("1.048576m")
+	assert.Nil(t, err)
+	assert.Equal(t, 0.001048576, f)
 
-    act, err = ToNumber("1.0A")
-    if err == nil {
-        t.Errorf("Expected error")
-    }
+	f, err = ToNumber("1.0A")
+	assert.NotNil(t, err)
+	assert.Equal(t, 1., f)
 }
 
 func TestUnitsToTimeString(t *testing.T) {
-    var act, exp string
+	var str string
 
-    act = ToTimeString(59)
-    exp = "0.00:00:59.000000"
-    if act != exp {
-        t.Errorf("Actual: %s, Expected: %s\n", act, exp)
-    }
+	str = ToTimeString(59)
+	assert.Equal(t, "0.00:00:59.000000", str)
 
-    act = ToTimeString(60)
-    exp = "0.00:01:00.000000"
-    if act != exp {
-        t.Errorf("Actual: %s, Expected: %s\n", act, exp)
-    }
+	str = ToTimeString(60)
+	assert.Equal(t, "0.00:01:00.000000", str)
 
-    act = ToTimeString(75)
-    exp = "0.00:01:15.000000"
-    if act != exp {
-        t.Errorf("Actual: %s, Expected: %s\n", act, exp)
-    }
+	str = ToTimeString(75)
+	assert.Equal(t, "0.00:01:15.000000", str)
 
-    act = ToTimeString(86399)
-    exp = "0.23:59:59.000000"
-    if act != exp {
-        t.Errorf("Actual: %s, Expected: %s\n", act, exp)
-    }
+	str = ToTimeString(86399)
+	assert.Equal(t, "0.23:59:59.000000", str)
 
-    act = ToTimeString(86401.123456789)
-    exp = "1.00:00:01.123457"
-    if act != exp {
-        t.Errorf("Actual: %s, Expected: %s\n", act, exp)
-    }
+	str = ToTimeString(86401.123456789)
+	assert.Equal(t, "1.00:00:01.123457", str)
 
-    act = ToTimeString(867600.050)
-    exp = "10.01:00:00.050000"
-    if act != exp {
-        t.Errorf("Actual: %s, Expected: %s\n", act, exp)
-    }
+	str = ToTimeString(867600.050)
+	assert.Equal(t, "10.01:00:00.050000", str)
 
-    act = ToTimeString(2680200.000789)
-    exp = "31.00:30:00.000789"
-    if act != exp {
-        t.Errorf("Actual: %s, Expected: %s\n", act, exp)
-    }
+	str = ToTimeString(2680200.000789)
+	assert.Equal(t, "31.00:30:00.000789", str)
 
-    act = ToTimeString(31557600)
-    exp = "365.06:00:00.000000"
-    if act != exp {
-        t.Errorf("Actual: %s, Expected: %s\n", act, exp)
-    }
+	str = ToTimeString(31557600)
+	assert.Equal(t, "365.06:00:00.000000", str)
 }
