@@ -3,6 +3,8 @@ package tokenbucket
 import (
 	"time"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTokenBucketNew(t *testing.T) {
@@ -10,76 +12,49 @@ func TestTokenBucketNew(t *testing.T) {
 	size := uint64(10000)
 	tb := New(rate, size)
 
-	if tb.rate != rate {
-		t.Errorf("Actual: %v, Expected: %v\n", tb.rate, rate)
-	}
-
-	if tb.size != size {
-		t.Errorf("Actual: %v, Expected: %v\n", tb.size, size)
-	}
+	assert.Equal(t, rate, tb.rate)
+	assert.Equal(t, size, tb.size)
 }
 
 func TestTokenBucketRemove(t *testing.T) {
-	tb1 := New(1000, 10000)
+	tb1 := New(1000, 10)
 
 	start := time.Now()
 	rv := tb1.Remove(10)
+	rv = tb1.Remove(10)
 	elapsed := time.Since(start)
 
-	if rv != 10 {
-		t.Errorf("Actual: %v, Expected: %v\n", rv, 10)
-	}
-
-	if elapsed < (time.Millisecond * 10) {
-		t.Errorf("Actual: %v, Expected: %v\n", rv, 10)
-	}
+	assert.Equal(t, uint64(10), rv)
+	assert.True(t, elapsed >= (time.Millisecond * 10))
 
 	tb2 := New(0, 10000)
 	start = time.Now()
 	rv = tb2.Remove(10)
 	elapsed = time.Since(start)
 
-	if rv != 10 {
-		t.Errorf("Actual: %v, Expected: %v\n", rv, 10)
-	}
-
-	if elapsed > (time.Millisecond * 1) {
-		t.Errorf("Actual: %v, Expected: %v\n", rv, 10)
-	}
+	assert.Equal(t, uint64(10), rv)
+	assert.True(t, elapsed <= (time.Millisecond * 1))
 }
 
 func TestTokenBucketRequest(t *testing.T) {
-	tb1 := New(1000, 10000)
+	tb1 := New(1000, 100)
 
 	rv := tb1.Request(500)
-	if rv != 0 {
-		t.Errorf("Actual: %v, Expected: %v\n", rv, 0)
-	}
+	assert.NotEqual(t, 500, rv)
 
 	tb2 := New(0, 10000)
 	rv = tb2.Request(tb2.size)
-	if rv != tb2.size {
-		t.Errorf("Actual: %v, Expected: %v\n", rv, tb2.size)
-	}
+	assert.Equal(t, tb2.size, rv)
 
 	tb3 := New(0, 10000)
 	rv = tb3.Request(20000)
-	if rv != tb3.size {
-		t.Errorf("Actual: %v, Expected: %v\n", rv, tb3.size)
-	}
+	assert.Equal(t, tb3.size, rv)
 }
 
 func TestTokenBucketReturn(t *testing.T) {
-	tb1 := New(0, 10000)
+	tb1 := New(1000, 10000)
 
+	tb1.Remove(10000)
 	rv := tb1.Return(20000)
-	if rv != tb1.size {
-		t.Errorf("Actual: %v, Expected: %v\n", rv, tb1.size)
-	}
-
-	tb2 := New(1000, 10000)
-	rv = tb2.Return(20000)
-	if rv != tb2.size {
-		t.Errorf("Actual: %v, Expected: %v\n", rv, tb2.size)
-	}
+	assert.Equal(t, uint64(10000), rv)
 }
