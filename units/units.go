@@ -9,12 +9,12 @@ import (
 	"strings"
 )
 
-type prefix struct {
+type prefixPair struct {
 	sym string
 	val float64
 }
 
-var binaryPrefix = [...]prefix{
+var binaryPrefix = [...]prefixPair{
 	{sym: "", val: math.Pow(1024, 0)},
 	{sym: "Ki", val: math.Pow(1024, 1)},
 	{sym: "Mi", val: math.Pow(1024, 2)},
@@ -26,7 +26,7 @@ var binaryPrefix = [...]prefix{
 	{sym: "Yi", val: math.Pow(1024, 8)},
 }
 
-var metricPrefixLt1 = [...]prefix{
+var metricPrefixLt1 = [...]prefixPair{
 	{sym: "", val: math.Pow(1000, 0)},
 	{sym: "m", val: math.Pow(1000, -1)},
 	{sym: "u", val: math.Pow(1000, -2)},
@@ -38,7 +38,7 @@ var metricPrefixLt1 = [...]prefix{
 	{sym: "y", val: math.Pow(1000, -8)},
 }
 
-var metricPrefixGe1 = [...]prefix{
+var metricPrefixGe1 = [...]prefixPair{
 	{sym: "", val: math.Pow(1000, 0)},
 	{sym: "k", val: math.Pow(1000, 1)},
 	{sym: "M", val: math.Pow(1000, 2)},
@@ -50,7 +50,7 @@ var metricPrefixGe1 = [...]prefix{
 	{sym: "Y", val: math.Pow(1000, 8)},
 }
 
-var timePrefix = [...]prefix{
+var timePrefix = [...]prefixPair{
 	{sym: "%.0f.", val: 86400},
 	{sym: "%02.0f:", val: 3600},
 	{sym: "%02.0f:", val: 60},
@@ -150,7 +150,7 @@ func ToNumber(s string) (float64, error) {
 
 func ToBinaryStringWithPrefix(number float64, precision int, separator, returnPrefix, quantity string) string {
 	var i int
-	var prefix prefix
+	var prefix prefixPair
 	var symbol string
 	var sfactor float64 = 1
 	n := math.Abs(number)
@@ -183,7 +183,7 @@ func ToBinaryString(number float64, precision int, separator, quantity string) s
 
 func ToMetricStringWithPrefix(number float64, precision int, separator, returnPrefix, quantity string) string {
 	var i int
-	var prefix prefix
+	var prefix prefixPair
 	var symbol string
 	var sfactor float64 = 1
 	n := math.Abs(number)
@@ -224,10 +224,6 @@ func ToMetricStringWithPrefix(number float64, precision int, separator, returnPr
 			n = n / metricPrefixGe1[i].val
 			symbol = metricPrefixGe1[i].sym
 		}
-	}
-
-	if number == 111222333444555666777888999. {
-		fmt.Println("Yes!!!")
 	}
 
 	return strconv.FormatFloat(sfactor*n, 'f', precision, 64) + separator + symbol + quantity

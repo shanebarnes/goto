@@ -20,6 +20,13 @@ func TestUnitsToBinaryString(t *testing.T) {
 
 	str = ToBinaryString(3.5*1024*1024*1024*1024, -1, "", "B")
 	assert.Equal(t, "3.5TiB", str)
+
+	str = ToBinaryString(1048575, 3, "", "B")
+	assert.Equal(t, "1023.999KiB", str)
+
+	// FIXME: Should return 1.00MiB
+	str = ToBinaryString(1048575, 2, "", "B")
+	assert.Equal(t, "1024.00KiB", str)
 }
 
 func TestUnitsToBinaryStringWithPrefix(t *testing.T) {
@@ -62,6 +69,13 @@ func TestUnitsToMetricString(t *testing.T) {
 
 	str = ToMetricString(-9020, -1, " ", "N")
 	assert.Equal(t, "-9.02 kN", str)
+
+	str = ToMetricString(999999, -1, "", "B")
+	assert.Equal(t, "999.999kB", str)
+
+	// FIXME: Should return 1.00MB
+	str = ToMetricString(999999, 2, "", "B")
+	assert.Equal(t, "1000.00kB", str)
 }
 
 func TestUnitsToMetricStringWithPrefix(t *testing.T) {
@@ -88,6 +102,12 @@ func TestUnitsToMetricStringWithPrefix(t *testing.T) {
 
 	str = ToMetricStringWithPrefix(val, 3, " ", "G", "W")
 	assert.Equal(t, "0.123 GW", str)
+
+	str = ToMetricStringWithPrefix(999999, 2, " ", "M", "B")
+	assert.Equal(t, "1.00 MB", str)
+
+	str = ToMetricStringWithPrefix(994999, 2, " ", "M", "B")
+	assert.Equal(t, "0.99 MB", str)
 }
 
 func TestUnitsToNumber(t *testing.T) {
