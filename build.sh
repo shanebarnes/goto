@@ -14,7 +14,12 @@ function err_handler() {
 
 trap 'err_handler' SIGINT ERR
 
-go build -v ./...
-go test -v ./... -cover
+#go vet -v ./...
+#go build -v ./...
+go test -v aggregate/* -cover
+go test -v logger/* -cover
+go test -v tlscerts/* -cover
+go test -v tokenbucket/* -cover
+go test -v units/* -cover
 
 exit $?
