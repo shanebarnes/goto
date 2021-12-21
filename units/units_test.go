@@ -24,7 +24,7 @@ func TestUnitsToBinaryString(t *testing.T) {
 	str = ToBinaryString(1048575, 3, "", "B")
 	assert.Equal(t, "1023.999KiB", str)
 
-	// FIXME: Should return 1.00MiB
+	// TODO: Should return 1.00MiB
 	str = ToBinaryString(1048575, 2, "", "B")
 	assert.Equal(t, "1024.00KiB", str)
 }
@@ -73,9 +73,12 @@ func TestUnitsToMetricString(t *testing.T) {
 	str = ToMetricString(999999, -1, "", "B")
 	assert.Equal(t, "999.999kB", str)
 
-	// FIXME: Should return 1.00MB
+	// TODO: Should return 1.00MB
 	str = ToMetricString(999999, 2, "", "B")
 	assert.Equal(t, "1000.00kB", str)
+
+	str = ToMetricString(345678902385467192, 2, "", "B")
+	assert.Equal(t, "345.68PB", str)
 }
 
 func TestUnitsToMetricStringWithPrefix(t *testing.T) {

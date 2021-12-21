@@ -1,8 +1,8 @@
 package tokenbucket
 
 import (
-	"time"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -25,7 +25,7 @@ func TestTokenBucketRemove(t *testing.T) {
 	elapsed := time.Since(start)
 
 	assert.Equal(t, uint64(10), rv)
-	assert.True(t, elapsed >= (time.Millisecond * 10))
+	assert.True(t, elapsed >= (time.Millisecond*10))
 
 	tb2 := New(0, 10000)
 	start = time.Now()
@@ -33,7 +33,7 @@ func TestTokenBucketRemove(t *testing.T) {
 	elapsed = time.Since(start)
 
 	assert.Equal(t, uint64(10), rv)
-	assert.True(t, elapsed <= (time.Millisecond * 1))
+	assert.True(t, elapsed <= (time.Millisecond*1))
 }
 
 func TestTokenBucketRequest(t *testing.T) {

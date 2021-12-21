@@ -9,13 +9,13 @@ import (
 )
 
 type record struct {
-	count   int64
-	max     interface{}
-	min     interface{}
-	sum     interface{}
-	time0   time.Time
-	timeN   time.Time
-	value0  interface{}
+	count  int64
+	max    interface{}
+	min    interface{}
+	sum    interface{}
+	time0  time.Time
+	timeN  time.Time
+	value0 interface{}
 }
 
 type Aggregator struct {
@@ -360,12 +360,12 @@ func (a *Aggregator) Insert(key interface{}, value interface{}) error {
 		var newValue interface{}
 		if newValue, err = a.convert(value); err == nil {
 			a.db[key] = &record{
-				count: 1,
-				max: value,
-				min: value,
-				sum: newValue,
-				time0: now,
-				timeN: now,
+				count:  1,
+				max:    value,
+				min:    value,
+				sum:    newValue,
+				time0:  now,
+				timeN:  now,
 				value0: value,
 			}
 		}

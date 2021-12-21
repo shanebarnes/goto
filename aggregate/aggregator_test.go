@@ -292,7 +292,7 @@ func TestAggregator_GetRate_DurationNegative(t *testing.T) {
 		assert.Nil(t, a.Insert(typ, typ))
 		assert.Nil(t, a.Insert(typ, typ))
 
-		a.db[typ].timeN = a.db[typ].time0.Add(time.Millisecond*500) // Mock the elapsed time
+		a.db[typ].timeN = a.db[typ].time0.Add(time.Millisecond * 500) // Mock the elapsed time
 
 		rate, err := a.GetRate(typ, -time.Second)
 		switch typ.(type) {
@@ -317,7 +317,7 @@ func TestAggregator_GetRate_DurationPositive(t *testing.T) {
 		assert.Nil(t, a.Insert(typ, typ))
 		assert.Nil(t, a.Insert(typ, typ))
 
-		a.db[typ].timeN = a.db[typ].time0.Add(time.Millisecond*500) // Mock the elapsed time
+		a.db[typ].timeN = a.db[typ].time0.Add(time.Millisecond * 500) // Mock the elapsed time
 
 		rate, err := a.GetRate(typ, time.Second)
 		switch typ.(type) {
@@ -342,7 +342,7 @@ func TestAggregator_GetRate_DurationZero(t *testing.T) {
 		assert.Nil(t, a.Insert(typ, typ))
 		assert.Nil(t, a.Insert(typ, typ))
 
-		a.db[typ].timeN = a.db[typ].time0.Add(time.Millisecond*500) // Mock the elapsed time
+		a.db[typ].timeN = a.db[typ].time0.Add(time.Millisecond * 500) // Mock the elapsed time
 
 		rate, err := a.GetRate(typ, 0)
 		switch typ.(type) {

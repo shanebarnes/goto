@@ -1,0 +1,4 @@
+# Force git to checkout files under Windows using LF instead of CR+LF. The
+# single line ending is necessary when using gofmt across different platforms.
+# https://github.com/golang/go/issues/16355
+*.go text eol=lf

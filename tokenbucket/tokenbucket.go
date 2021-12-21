@@ -5,10 +5,10 @@ import (
 )
 
 type TokenBucket struct {
-	fill  uint64 // The number of tokens currently in the bucket
-	rate  uint64 // The rate at which tokens are added to the bucket measured in tokens per second
-	size  uint64 // The capacity of the bucket measured in tokens
-	time  int64  // Unix timestamp in nanoseconds indicating the last time that tokens were added to the bucket
+	fill uint64 // The number of tokens currently in the bucket
+	rate uint64 // The rate at which tokens are added to the bucket measured in tokens per second
+	size uint64 // The capacity of the bucket measured in tokens
+	time int64  // Unix timestamp in nanoseconds indicating the last time that tokens were added to the bucket
 	wait *time.Timer
 }
 
@@ -36,14 +36,14 @@ func (tb *TokenBucket) Remove(tokens uint64) uint64 {
 
 	if rv < tokens {
 		if tb.rate > 0 {
-			deadline := time.Unix(0, int64(tokens - rv) * int64(time.Second) / int64(tb.rate) + int64(tb.time))
+			deadline := time.Unix(0, int64(tokens-rv)*int64(time.Second)/int64(tb.rate)+int64(tb.time))
 			duration := time.Until(deadline)
 
 			tb.wait.Reset(duration)
 			<-tb.wait.C
 			tb.wait.Stop()
 
-			rv = rv + tb.Request(tokens - rv)
+			rv = rv + tb.Request(tokens-rv)
 		}
 	}
 

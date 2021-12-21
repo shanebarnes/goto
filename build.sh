@@ -8,18 +8,21 @@ function err_handler() {
     while caller $frame; do
         ((frame++));
     done
-    echo "$*"
+    printf "%s\n" "$*"
     exit 1
 }
 
 trap 'err_handler' SIGINT ERR
 
-#go vet -v ./...
-#go build -v ./...
-go test -v aggregate/* -cover
-go test -v logger/* -cover
-go test -v tlscerts/* -cover
-go test -v tokenbucket/* -cover
-go test -v units/* -cover
+gofmt_diff=$(gofmt -d .)
+if [[ ! -z "$gofmt_diff" ]]; then
+    printf "%s\n" "$gofmt_diff"
+    printf "To continue building, please fix Go formatting by running 'gofmt -w .'\n"
+    exit 1
+fi
+
+go vet -v ./...
+go build -v ./...
+go test -v ./... -cover
 
 exit $?

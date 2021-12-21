@@ -60,8 +60,8 @@ var timePrefix = [...]prefixPair{
 func getBinaryPrefixIndex(prefix string) int {
 	rv := -1
 
-	for i := range binaryPrefix {
-		if prefix == binaryPrefix[i].sym {
+	for i, units := range binaryPrefix {
+		if prefix == units.sym {
 			rv = i
 			break
 		}
@@ -73,8 +73,8 @@ func getBinaryPrefixIndex(prefix string) int {
 func getMetricPrefixGe1Index(prefix string) int {
 	rv := -1
 
-	for i := range metricPrefixGe1 {
-		if prefix == metricPrefixGe1[i].sym {
+	for i, units := range metricPrefixGe1 {
+		if prefix == units.sym {
 			rv = i
 			break
 		}
@@ -86,8 +86,8 @@ func getMetricPrefixGe1Index(prefix string) int {
 func getMetricPrefixLt1Index(prefix string) int {
 	rv := -1
 
-	for i := range metricPrefixLt1 {
-		if prefix == metricPrefixLt1[i].sym {
+	for i, units := range metricPrefixLt1 {
+		if prefix == units.sym {
 			rv = i
 			break
 		}
@@ -110,27 +110,27 @@ func ToNumber(s string) (float64, error) {
 		case 0:
 			found = true
 		case 1: // Metric prefix (e.g., k)
-			for i := range metricPrefixGe1 {
-				if metricPrefixGe1[i].sym == p {
-					f = f * metricPrefixGe1[i].val
+			for _, units := range metricPrefixGe1 {
+				if units.sym == p {
+					f = f * units.val
 					found = true
 					break
 				}
 			}
 
 			if !found {
-				for i := range metricPrefixLt1 {
-					if metricPrefixLt1[i].sym == p {
-						f = f * metricPrefixLt1[i].val
+				for _, units := range metricPrefixLt1 {
+					if units.sym == p {
+						f = f * units.val
 						found = true
 						break
 					}
 				}
 			}
 		case 2: // Binary prefix (e.g., Ki)
-			for i := range binaryPrefix {
-				if binaryPrefix[i].sym == p {
-					f = f * binaryPrefix[i].val
+			for _, units := range binaryPrefix {
+				if units.sym == p {
+					f = f * units.val
 					found = true
 					break
 				}
@@ -149,20 +149,19 @@ func ToNumber(s string) (float64, error) {
 }
 
 func ToBinaryStringWithPrefix(number float64, precision int, separator, returnPrefix, quantity string) string {
-	var i int
-	var prefix prefixPair
-	var symbol string
 	var sfactor float64 = 1
-	n := math.Abs(number)
+	f := math.Abs(number)
 
 	if number < 0 {
 		sfactor = -1
 	}
 
 	// Convert to appropriate binary prefix that keeps unit value in the range [1, 1024)
-	if i = getBinaryPrefixIndex(returnPrefix); i < 0 {
-		for i, prefix = range binaryPrefix {
-			if n < prefix.val {
+	i := getBinaryPrefixIndex(returnPrefix)
+	if i < 0 {
+		var units prefixPair
+		for i, units = range binaryPrefix {
+			if f < units.val {
 				if i > 0 {
 					i = i - 1
 				}
@@ -171,10 +170,10 @@ func ToBinaryStringWithPrefix(number float64, precision int, separator, returnPr
 		}
 	}
 
-	n = n / binaryPrefix[i].val
-	symbol = binaryPrefix[i].sym
+	f = f / binaryPrefix[i].val
+	symbol := binaryPrefix[i].sym
 
-	return strconv.FormatFloat(sfactor*n, 'f', precision, 64) + separator + symbol + quantity
+	return strconv.FormatFloat(sfactor*f, 'f', precision, 64) + separator + symbol + quantity
 }
 
 func ToBinaryString(number float64, precision int, separator, quantity string) string {
