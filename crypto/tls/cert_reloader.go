@@ -84,15 +84,18 @@ func (r *Reloader) loadCertificate() error {
 }
 
 func (r *Reloader) reloadCertificate() {
+	minDuration := time.Second * 10
 	expiry := r.getCertificateExpiry()
 
 	for {
 		select {
 		case <-time.After(expiry):
 			if r.loadCertificate() == nil {
-				expiry = r.getCertificateExpiry()
+				if expiry = r.getCertificateExpiry(); expiry < minDuration {
+					expiry = minDuration
+				}
 			} else {
-				expiry = time.Second * 10
+				expiry = minDuration
 			}
 		case <-r.closeCtx.Done():
 			return
