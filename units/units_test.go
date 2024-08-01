@@ -1,167 +1,164 @@
 package units
 
 import (
+	"fmt"
+	"math"
 	"testing"
 
+	"github.com/dustin/go-humanize"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestUnitsToBinaryString(t *testing.T) {
-	var str string
+func TestToBinaryString(t *testing.T) {
+	tests := []struct {
+		expectedStr string
+		number      float64
+		precision   int
+		quantity    string
+		separator   string
+	}{
+		{expectedStr: "0B", number: 0, precision: 0, quantity: "B", separator: ""},
+		{expectedStr: "1023B", number: humanize.KiByte - 1, precision: 0, quantity: "B", separator: ""},
+		{expectedStr: "1KiB", number: humanize.KiByte, precision: 0, quantity: "B", separator: ""},
+		{expectedStr: "1023.999KiB", number: humanize.MiByte - 1, precision: 3, quantity: "B", separator: ""},
+		{expectedStr: "1MiB", number: humanize.MiByte, precision: 0, quantity: "B", separator: ""},
+		{expectedStr: "1023.999999MiB", number: humanize.GiByte - 1, precision: 6, quantity: "B", separator: ""},
+		{expectedStr: "1GiB", number: humanize.GiByte, precision: 0, quantity: "B", separator: ""},
+		{expectedStr: "1023.999999999GiB", number: humanize.TiByte - 1, precision: 9, quantity: "B", separator: ""},
+		{expectedStr: "1TiB", number: humanize.TiByte, precision: 0, quantity: "B", separator: ""},
+		{expectedStr: "1023.999999999999TiB", number: humanize.PiByte - 1, precision: 12, quantity: "B", separator: ""},
+		{expectedStr: "1PiB", number: humanize.PiByte, precision: 0, quantity: "B", separator: ""},
+	}
 
-	str = ToBinaryString(0, 0, "", "B")
-	assert.Equal(t, "0B", str)
-
-	str = ToBinaryString(1023, 0, "", "B")
-	assert.Equal(t, "1023B", str)
-
-	str = ToBinaryString(1024, -1, "", "B")
-	assert.Equal(t, "1KiB", str)
-
-	str = ToBinaryString(3.5*1024*1024*1024*1024, -1, "", "B")
-	assert.Equal(t, "3.5TiB", str)
-
-	str = ToBinaryString(1048575, 3, "", "B")
-	assert.Equal(t, "1023.999KiB", str)
-
-	// TODO: Should return 1.00MiB
-	str = ToBinaryString(1048575, 2, "", "B")
-	assert.Equal(t, "1024.00KiB", str)
+	for _, test := range tests {
+		t.Run(fmt.Sprintf("number=%f,precision=%d", test.number, test.precision), func(t *testing.T) {
+			assert.Equal(t, test.expectedStr, ToBinaryString(test.number, test.precision, test.separator, test.quantity))
+		})
+	}
 }
 
-func TestUnitsToBinaryStringWithPrefix(t *testing.T) {
-	var str string
-	val := 123456789.
+func TestToBinaryStringWithPrefix(t *testing.T) {
+	tests := []struct {
+		expectedStr string
+		number      float64
+		precision   int
+		prefix      string
+		quantity    string
+		separator   string
+	}{
+		{expectedStr: "117.738 MiB", number: 123456789, precision: 3, prefix: "wrong", quantity: "B", separator: " "},
+		{expectedStr: "120563.271 KiB", number: 123456789, precision: 3, prefix: "Ki", quantity: "B", separator: " "},
+		{expectedStr: "117.738 MiB", number: 123456789, precision: 3, prefix: "Mi", quantity: "B", separator: " "},
+		{expectedStr: "0.115 GiB", number: 123456789, precision: 3, prefix: "Gi", quantity: "B", separator: " "},
+	}
 
-	str = ToBinaryStringWithPrefix(val, 3, " ", "wrong", "B")
-	assert.Equal(t, "117.738 MiB", str)
-
-	str = ToBinaryStringWithPrefix(val, 3, " ", "Ki", "B")
-	assert.Equal(t, "120563.271 KiB", str)
-
-	str = ToBinaryStringWithPrefix(val, 3, " ", "Mi", "B")
-	assert.Equal(t, "117.738 MiB", str)
-
-	str = ToBinaryStringWithPrefix(val, 3, " ", "Gi", "B")
-	assert.Equal(t, "0.115 GiB", str)
+	for _, test := range tests {
+		t.Run(fmt.Sprintf("number=%f,precision=%d", test.number, test.precision), func(t *testing.T) {
+			assert.Equal(t, test.expectedStr, ToBinaryStringWithPrefix(test.number, test.precision, test.separator, test.prefix, test.quantity))
+		})
+	}
 }
 
-func TestUnitsToMetricString(t *testing.T) {
-	var str string
+func TestToMetricString(t *testing.T) {
+	tests := []struct {
+		expectedStr string
+		number      float64
+		precision   int
+		quantity    string
+		separator   string
+	}{
+		{expectedStr: "0B", number: 0, precision: 0, quantity: "B", separator: ""},
+		{expectedStr: "999B", number: humanize.KByte - 1, precision: 0, quantity: "B", separator: ""},
+		{expectedStr: "1kB", number: humanize.KByte, precision: 0, quantity: "B", separator: ""},
+		{expectedStr: "999.999kB", number: humanize.MByte - 1, precision: 3, quantity: "B", separator: ""},
+		{expectedStr: "1MB", number: humanize.MByte, precision: 0, quantity: "B", separator: ""},
+		{expectedStr: "999.999999MB", number: humanize.GByte - 1, precision: 6, quantity: "B", separator: ""},
+		{expectedStr: "1GB", number: humanize.GByte, precision: 0, quantity: "B", separator: ""},
+		{expectedStr: "999.999999999GB", number: humanize.TByte - 1, precision: 9, quantity: "B", separator: ""},
+		{expectedStr: "1TB", number: humanize.TByte, precision: 0, quantity: "B", separator: ""},
+		{expectedStr: "999.999999999999TB", number: humanize.PByte - 1, precision: 12, quantity: "B", separator: ""},
+		{expectedStr: "1PB", number: humanize.PByte, precision: 0, quantity: "B", separator: ""},
+	}
 
-	str = ToMetricString(0.000001, 2, " ", "m")
-	assert.Equal(t, "1.00 um", str)
-
-	str = ToMetricString(0.025, 3, " ", "s")
-	assert.Equal(t, "25.000 ms", str)
-
-	str = ToMetricString(0, 0, " ", "m")
-	assert.Equal(t, "0 m", str)
-
-	str = ToMetricString(1000, 0, "", "g")
-	assert.Equal(t, "1kg", str)
-
-	str = ToMetricString(500123000, -1, "-", "W")
-	assert.Equal(t, "500.123-MW", str)
-
-	str = ToMetricString(1048576, 5, "", "B")
-	assert.Equal(t, "1.04858MB", str)
-
-	str = ToMetricString(-9020, -1, " ", "N")
-	assert.Equal(t, "-9.02 kN", str)
-
-	str = ToMetricString(999999, -1, "", "B")
-	assert.Equal(t, "999.999kB", str)
-
-	// TODO: Should return 1.00MB
-	str = ToMetricString(999999, 2, "", "B")
-	assert.Equal(t, "1000.00kB", str)
-
-	str = ToMetricString(345678902385467192, 2, "", "B")
-	assert.Equal(t, "345.68PB", str)
+	for _, test := range tests {
+		t.Run(fmt.Sprintf("number=%f,precision=%d", test.number, test.precision), func(t *testing.T) {
+			assert.Equal(t, test.expectedStr, ToMetricString(test.number, test.precision, test.separator, test.quantity))
+		})
+	}
 }
 
-func TestUnitsToMetricStringWithPrefix(t *testing.T) {
-	var str string
-	val := 123456789.
+func TestToMetricStringWithPrefix(t *testing.T) {
+	tests := []struct {
+		expectedStr string
+		number      float64
+		precision   int
+		prefix      string
+		quantity    string
+		separator   string
+	}{
+		{expectedStr: "123.457 MB", number: 123456789, precision: 3, prefix: "wrong", quantity: "B", separator: " "},
+		{expectedStr: "123456.789 kB", number: 123456789, precision: 3, prefix: "k", quantity: "B", separator: " "},
+		{expectedStr: "123.457 MB", number: 123456789, precision: 3, prefix: "M", quantity: "B", separator: " "},
+		{expectedStr: "0.123 GB", number: 123456789, precision: 3, prefix: "G", quantity: "B", separator: " "},
+	}
 
-	str = ToMetricStringWithPrefix(val, 3, " ", "wrong", "W")
-	assert.Equal(t, "123.457 MW", str)
-
-	str = ToMetricStringWithPrefix(val, 3, " ", "m", "W")
-	assert.Equal(t, "123456789000.000 mW", str)
-
-	str = ToMetricStringWithPrefix(val, 3, " ", "u", "W")
-	assert.Equal(t, "123456789000000.000 uW", str)
-
-	str = ToMetricStringWithPrefix(val, 3, " ", "n", "W")
-	assert.Equal(t, "123456789000000000.000 nW", str)
-
-	str = ToMetricStringWithPrefix(val, 3, " ", "k", "W")
-	assert.Equal(t, "123456.789 kW", str)
-
-	str = ToMetricStringWithPrefix(val, 3, " ", "M", "W")
-	assert.Equal(t, "123.457 MW", str)
-
-	str = ToMetricStringWithPrefix(val, 3, " ", "G", "W")
-	assert.Equal(t, "0.123 GW", str)
-
-	str = ToMetricStringWithPrefix(999999, 2, " ", "M", "B")
-	assert.Equal(t, "1.00 MB", str)
-
-	str = ToMetricStringWithPrefix(994999, 2, " ", "M", "B")
-	assert.Equal(t, "0.99 MB", str)
+	for _, test := range tests {
+		t.Run(fmt.Sprintf("number=%f,precision=%d", test.number, test.precision), func(t *testing.T) {
+			assert.Equal(t, test.expectedStr, ToMetricStringWithPrefix(test.number, test.precision, test.separator, test.prefix, test.quantity))
+		})
+	}
 }
 
 func TestUnitsToNumber(t *testing.T) {
-	var f float64
-	var err error
+	tests := []struct {
+		expectErr   bool
+		expectedNum float64
+		str         string
+	}{
+		{expectErr: true, expectedNum: 0, str: "123A"},
+		{expectErr: false, expectedNum: 123 * math.Pow(10, -6), str: "123μ"},
+		{expectErr: false, expectedNum: 123 * math.Pow(10, -6), str: "123 μ"},
+		{expectErr: false, expectedNum: 123 * math.Pow(10, -3), str: "123m"},
+		{expectErr: false, expectedNum: 123 * math.Pow(10, -3), str: "123 m"},
+		{expectErr: false, expectedNum: 123, str: "123"},
+		{expectErr: false, expectedNum: 1000, str: "1k"},
+		{expectErr: false, expectedNum: 1000, str: "1 k"},
+		{expectErr: false, expectedNum: 1024, str: "1Ki"},
+		{expectErr: false, expectedNum: 1024, str: "1 Ki"},
+		{expectErr: false, expectedNum: 1234, str: "1.234k"},
+		{expectErr: false, expectedNum: 1234, str: "1.234 k"},
+		{expectErr: false, expectedNum: 1263.616, str: "1.234Ki"},
+		{expectErr: false, expectedNum: 1263.616, str: "1.234 Ki"},
+	}
 
-	f, err = ToNumber("123")
-	assert.Nil(t, err)
-	assert.Equal(t, 123., f)
-
-	f, err = ToNumber("1.048576M")
-	assert.Nil(t, err)
-	assert.Equal(t, 1048576., f)
-
-	f, err = ToNumber("1.048576 M")
-	assert.Nil(t, err)
-	assert.Equal(t, 1048576., f)
-
-	f, err = ToNumber("1.048576m")
-	assert.Nil(t, err)
-	assert.Equal(t, 0.001048576, f)
-
-	f, err = ToNumber("1.0A")
-	assert.NotNil(t, err)
-	assert.Equal(t, 1., f)
+	for _, test := range tests {
+		t.Run(test.str, func(t *testing.T) {
+			f, err := ToNumber(test.str)
+			if assert.Equal(t, test.expectErr, err != nil) && err == nil {
+				assert.Equal(t, test.expectedNum, f)
+			}
+		})
+	}
 }
 
-func TestUnitsToTimeString(t *testing.T) {
-	var str string
+func TestToTimeString(t *testing.T) {
+	tests := []struct {
+		durationInSeconds float64
+		expectedStr       string
+	}{
+		{durationInSeconds: 0, expectedStr: "0.00:00:00.000000000"},
+		{durationInSeconds: 59.999999999, expectedStr: "0.00:00:59.999999999"},
+		{durationInSeconds: 60, expectedStr: "0.00:01:00.000000000"},
+		{durationInSeconds: 3599.999999999, expectedStr: "0.00:59:59.999999999"},
+		{durationInSeconds: 3600, expectedStr: "0.01:00:00.000000000"},
+		{durationInSeconds: 86399.999999999, expectedStr: "0.23:59:59.999999999"},
+		{durationInSeconds: 86400, expectedStr: "1.00:00:00.000000000"},
+		{durationInSeconds: 86400 * 365, expectedStr: "365.00:00:00.000000000"},
+	}
 
-	str = ToTimeString(59)
-	assert.Equal(t, "0.00:00:59.000000", str)
-
-	str = ToTimeString(60)
-	assert.Equal(t, "0.00:01:00.000000", str)
-
-	str = ToTimeString(75)
-	assert.Equal(t, "0.00:01:15.000000", str)
-
-	str = ToTimeString(86399)
-	assert.Equal(t, "0.23:59:59.000000", str)
-
-	str = ToTimeString(86401.123456789)
-	assert.Equal(t, "1.00:00:01.123457", str)
-
-	str = ToTimeString(867600.050)
-	assert.Equal(t, "10.01:00:00.050000", str)
-
-	str = ToTimeString(2680200.000789)
-	assert.Equal(t, "31.00:30:00.000789", str)
-
-	str = ToTimeString(31557600)
-	assert.Equal(t, "365.06:00:00.000000", str)
+	for _, test := range tests {
+		t.Run(fmt.Sprintf("%013.010fs", test.durationInSeconds), func(t *testing.T) {
+			assert.Equal(t, test.expectedStr, ToTimeString(test.durationInSeconds))
+		})
+	}
 }

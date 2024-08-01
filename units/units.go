@@ -7,6 +7,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 )
 
 type prefixPair struct {
@@ -28,124 +29,75 @@ var binaryPrefix = [...]prefixPair{
 
 var metricPrefixLt1 = [...]prefixPair{
 	{sym: "", val: math.Pow(1000, 0)},
-	{sym: "m", val: math.Pow(1000, -1)},
-	{sym: "u", val: math.Pow(1000, -2)},
-	{sym: "n", val: math.Pow(1000, -3)},
-	{sym: "p", val: math.Pow(1000, -4)},
-	{sym: "f", val: math.Pow(1000, -5)},
-	{sym: "a", val: math.Pow(1000, -6)},
-	{sym: "z", val: math.Pow(1000, -7)},
-	{sym: "y", val: math.Pow(1000, -8)},
+	//{sym: "d", val: math.Pow(10, -1)},
+	//{sym: "c", val: math.Pow(10, -2)},
+	{sym: "m", val: math.Pow(10, -3)},
+	{sym: "μ", val: math.Pow(10, -6)},
+	{sym: "n", val: math.Pow(10, -9)},
+	{sym: "p", val: math.Pow(10, -12)},
+	{sym: "f", val: math.Pow(10, -15)},
+	{sym: "a", val: math.Pow(10, -18)},
+	{sym: "z", val: math.Pow(10, -21)},
+	{sym: "y", val: math.Pow(10, -24)},
+	{sym: "r", val: math.Pow(10, -27)},
+	{sym: "q", val: math.Pow(10, -30)},
 }
 
 var metricPrefixGe1 = [...]prefixPair{
-	{sym: "", val: math.Pow(1000, 0)},
-	{sym: "k", val: math.Pow(1000, 1)},
-	{sym: "M", val: math.Pow(1000, 2)},
-	{sym: "G", val: math.Pow(1000, 3)},
-	{sym: "T", val: math.Pow(1000, 4)},
-	{sym: "P", val: math.Pow(1000, 5)},
-	{sym: "E", val: math.Pow(1000, 6)},
-	{sym: "Z", val: math.Pow(1000, 7)},
-	{sym: "Y", val: math.Pow(1000, 8)},
+	{sym: "", val: math.Pow(10, 0)},
+	//{sym: "da", val: math.Pow(10, 1)},
+	//{sym: "h", val: math.Pow(10, 2)},
+	{sym: "k", val: math.Pow(10, 3)},
+	{sym: "M", val: math.Pow(10, 6)},
+	{sym: "G", val: math.Pow(10, 9)},
+	{sym: "T", val: math.Pow(10, 12)},
+	{sym: "P", val: math.Pow(10, 15)},
+	{sym: "E", val: math.Pow(10, 18)},
+	{sym: "Z", val: math.Pow(10, 21)},
+	{sym: "Y", val: math.Pow(10, 24)},
+	{sym: "R", val: math.Pow(10, 27)},
+	{sym: "Q", val: math.Pow(10, 30)},
 }
 
 var timePrefix = [...]prefixPair{
 	{sym: "%.0f.", val: 86400},
 	{sym: "%02.0f:", val: 3600},
 	{sym: "%02.0f:", val: 60},
-	{sym: "%09f", val: 1},
+	{sym: "%012.09f", val: 1},
 }
 
 func getBinaryPrefixIndex(prefix string) int {
-	rv := -1
-
-	for i, units := range binaryPrefix {
-		if prefix == units.sym {
-			rv = i
-			break
+	for i, u := range binaryPrefix {
+		if prefix == u.sym {
+			return i
 		}
 	}
 
-	return rv
+	return -1
 }
 
 func getMetricPrefixGe1Index(prefix string) int {
-	rv := -1
-
-	for i, units := range metricPrefixGe1 {
-		if prefix == units.sym {
-			rv = i
-			break
+	for i, u := range metricPrefixGe1 {
+		if prefix == u.sym {
+			return i
 		}
 	}
 
-	return rv
+	return -1
 }
 
 func getMetricPrefixLt1Index(prefix string) int {
-	rv := -1
-
-	for i, units := range metricPrefixLt1 {
-		if prefix == units.sym {
-			rv = i
-			break
+	for i, u := range metricPrefixLt1 {
+		if prefix == u.sym {
+			return i
 		}
 	}
 
-	return rv
+	return -1
 }
 
-func ToNumber(s string) (float64, error) {
-	var f float64 = 0
-	var p string
-
-	i, err := fmt.Sscanf(s, "%f%s", &f, &p)
-
-	if i == 2 {
-		p = strings.TrimSpace(p)
-		found := false
-
-		switch len(p) {
-		case 0:
-			found = true
-		case 1: // Metric prefix (e.g., k)
-			for _, units := range metricPrefixGe1 {
-				if units.sym == p {
-					f = f * units.val
-					found = true
-					break
-				}
-			}
-
-			if !found {
-				for _, units := range metricPrefixLt1 {
-					if units.sym == p {
-						f = f * units.val
-						found = true
-						break
-					}
-				}
-			}
-		case 2: // Binary prefix (e.g., Ki)
-			for _, units := range binaryPrefix {
-				if units.sym == p {
-					f = f * units.val
-					found = true
-					break
-				}
-			}
-		default:
-		}
-
-		if found == false {
-			err = errors.New("Invalid prefix: " + p)
-		}
-	} else if i == 1 && err == io.EOF {
-		err = nil
-	}
-
-	return f, err
+func ToBinaryString(number float64, precision int, separator, quantity string) string {
+	return ToBinaryStringWithPrefix(number, precision, separator, "-", quantity)
 }
 
 func ToBinaryStringWithPrefix(number float64, precision int, separator, returnPrefix, quantity string) string {
@@ -159,9 +111,9 @@ func ToBinaryStringWithPrefix(number float64, precision int, separator, returnPr
 	// Convert to appropriate binary prefix that keeps unit value in the range [1, 1024)
 	i := getBinaryPrefixIndex(returnPrefix)
 	if i < 0 {
-		var units prefixPair
-		for i, units = range binaryPrefix {
-			if f < units.val {
+		var u prefixPair
+		for i, u = range binaryPrefix {
+			if f < u.val {
 				if i > 0 {
 					i = i - 1
 				}
@@ -170,21 +122,23 @@ func ToBinaryStringWithPrefix(number float64, precision int, separator, returnPr
 		}
 	}
 
-	f = f / binaryPrefix[i].val
+	f /= binaryPrefix[i].val
 	symbol := binaryPrefix[i].sym
 
 	return strconv.FormatFloat(sfactor*f, 'f', precision, 64) + separator + symbol + quantity
 }
 
-func ToBinaryString(number float64, precision int, separator, quantity string) string {
-	return ToBinaryStringWithPrefix(number, precision, separator, "-", quantity)
+func ToMetricString(number float64, precision int, separator, quantity string) string {
+	return ToMetricStringWithPrefix(number, precision, separator, "-", quantity)
 }
 
 func ToMetricStringWithPrefix(number float64, precision int, separator, returnPrefix, quantity string) string {
-	var i int
-	var prefix prefixPair
-	var symbol string
-	var sfactor float64 = 1
+	var (
+		i       int
+		prefix  prefixPair
+		symbol  string
+		sfactor float64 = 1
+	)
 	n := math.Abs(number)
 
 	if number < 0 {
@@ -192,10 +146,10 @@ func ToMetricStringWithPrefix(number float64, precision int, separator, returnPr
 	}
 
 	if i = getMetricPrefixGe1Index(returnPrefix); i > -1 { // Return desired metric prefix
-		n = n / metricPrefixGe1[i].val
+		n /= metricPrefixGe1[i].val
 		symbol = metricPrefixGe1[i].sym
 	} else if i = getMetricPrefixLt1Index(returnPrefix); i > -1 { // Return desired metric prefix
-		n = n / metricPrefixLt1[i].val
+		n /= metricPrefixLt1[i].val
 		symbol = metricPrefixLt1[i].sym
 	} else { // Convert to appropriate metric prefix that keeps unit value in the range [1, 1000)
 
@@ -208,7 +162,7 @@ func ToMetricStringWithPrefix(number float64, precision int, separator, returnPr
 				}
 			}
 
-			n = n / metricPrefixLt1[i].val
+			n /= metricPrefixLt1[i].val
 			symbol = metricPrefixLt1[i].sym
 		} else {
 			for i, prefix = range metricPrefixGe1 {
@@ -220,7 +174,7 @@ func ToMetricStringWithPrefix(number float64, precision int, separator, returnPr
 				}
 			}
 
-			n = n / metricPrefixGe1[i].val
+			n /= metricPrefixGe1[i].val
 			symbol = metricPrefixGe1[i].sym
 		}
 	}
@@ -228,23 +182,66 @@ func ToMetricStringWithPrefix(number float64, precision int, separator, returnPr
 	return strconv.FormatFloat(sfactor*n, 'f', precision, 64) + separator + symbol + quantity
 }
 
-func ToMetricString(number float64, precision int, separator, quantity string) string {
-	return ToMetricStringWithPrefix(number, precision, separator, "-", quantity)
-}
+func ToNumber(s string) (float64, error) {
+	var (
+		f      float64
+		prefix string
+	)
 
-func ToTimeString(durationSec float64) string {
-	n := math.Abs(durationSec)
-	ret := ""
-
-	for _, prefix := range timePrefix {
-		f := n
-		if prefix.val > 1 {
-			f = math.Floor(f / prefix.val)
-			n = n - (f * prefix.val)
+	n, err := fmt.Sscanf(s, "%f%s", &f, &prefix)
+	if err != nil {
+		switch {
+		case errors.Is(err, io.EOF) && n == 1:
+			return f, nil
+		default:
+			return 0, err
 		}
-
-		ret = ret + fmt.Sprintf(prefix.sym, f)
 	}
 
-	return ret
+	if n == 2 {
+		prefix = strings.TrimSpace(prefix)
+		switch utf8.RuneCountInString(prefix) {
+		case 0:
+			return f, nil
+		case 1: // Metric prefix (e.g., k)
+			for _, u := range metricPrefixGe1 {
+				if u.sym == prefix {
+					return f * u.val, nil
+				}
+			}
+
+			for _, u := range metricPrefixLt1 {
+				if u.sym == prefix {
+					return f * u.val, nil
+				}
+			}
+		case 2: // Binary prefix (e.g., Ki)
+			for _, u := range binaryPrefix {
+				if u.sym == prefix {
+					return f * u.val, nil
+				}
+			}
+		}
+		return 0, fmt.Errorf("invalid prefix: " + prefix)
+	}
+
+	return f, nil
+}
+
+func ToTimeString(durationInSeconds float64) string {
+	durationInSeconds = math.Abs(durationInSeconds)
+
+	var timeStr string
+
+	for _, prefix := range timePrefix {
+		f := durationInSeconds
+		if prefix.val > 1 {
+			f = math.Floor(f / prefix.val)
+			durationInSeconds -= (f * prefix.val)
+		}
+
+		timeStr += fmt.Sprintf(prefix.sym, f)
+	}
+
+	return timeStr
 }
