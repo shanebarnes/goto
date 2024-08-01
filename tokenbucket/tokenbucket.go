@@ -1,107 +1,125 @@
 package tokenbucket
 
 import (
+	"context"
 	"time"
 )
 
+// TokenBucket implements a non thread-safe token bucket algorithm.
 type TokenBucket struct {
-	fill uint64 // The number of tokens currently in the bucket
-	rate uint64 // The rate at which tokens are added to the bucket measured in tokens per second
-	size uint64 // The capacity of the bucket measured in tokens
-	time int64  // Unix timestamp in nanoseconds indicating the last time that tokens were added to the bucket
+	// The number of tokens currently in the bucket.
+	fill uint64
+
+	// The rate at which tokens are added to the bucket measured in tokens per
+	// second.
+	rate uint64
+
+	// The capacity of the bucket measured in tokens.
+	size uint64
+
+	// Last time that tokens were added to the bucket.
+	time time.Time
+
 	wait *time.Timer
 }
 
+// New creates and returns a new TokenBucket instance.
 func New(rate uint64, size uint64) *TokenBucket {
 	if size == 0 {
-		panic("size: must be a non-zero value")
+		panic("bucket size must be greater than value")
 	}
 
-	bucket := new(TokenBucket)
-	bucket.time = time.Now().UnixNano()
-	bucket.rate = rate
-	bucket.fill = size
-	bucket.size = size
-	bucket.wait = time.NewTimer(0 * time.Second)
+	start := time.Now()
+	t := time.NewTimer(0)
+	<-t.C
+	t.Stop()
 
-	<-bucket.wait.C
-	bucket.wait.Stop()
-
-	return bucket
+	return &TokenBucket{
+		fill: size,
+		rate: rate,
+		size: size,
+		time: start,
+		wait: t,
+	}
 }
 
+// Remove blocks until all requested tokens are available to be removed from
+// the bucket.
 func (tb *TokenBucket) Remove(tokens uint64) uint64 {
-	// A remove is a request that blocks until are tokens to remove are available
-	rv := tb.Request(tokens)
-
-	if rv < tokens {
-		if tb.rate > 0 {
-			deadline := time.Unix(0, int64(tokens-rv)*int64(time.Second)/int64(tb.rate)+int64(tb.time))
-			duration := time.Until(deadline)
-
-			tb.wait.Reset(duration)
-			<-tb.wait.C
-			tb.wait.Stop()
-
-			rv = rv + tb.Request(tokens-rv)
-		}
-	}
-
-	return rv
+	n, _ := tb.RemoveWithContext(context.Background(), tokens)
+	return n
 }
 
-func (tb *TokenBucket) Request(tokens uint64) uint64 {
-	var rv uint64 = 0
+// RemoveWithContext blocks until all requested tokens are available to be
+// removed from the bucket or the context is canceled.
+func (tb *TokenBucket) RemoveWithContext(ctx context.Context, tokens uint64) (uint64, error) {
+	n := tb.request(tokens)
 
-	if tb != nil {
-		if tb.rate <= 0 {
-			if tb.size < tokens {
-				rv = tb.size
-			} else {
-				rv = tokens
-			}
-		} else if tb.fill >= tokens {
-			tb.fill = tb.fill - tokens
-			rv = tokens
-		} else {
-			now := time.Now().UnixNano()
-			newTokens := tb.rate * uint64(now-tb.time) / uint64(time.Second)
+	switch {
+	case ctx.Err() != nil:
+		return 0, ctx.Err()
+	case n >= tokens || tb.rate == 0:
+		return tokens, nil
+	default:
+		deadline := time.Unix(0, int64(tokens-n)*int64(time.Second)/int64(tb.rate)+tb.time.UnixNano())
+		duration := time.Until(deadline)
 
-			if newTokens > 0 {
-				tb.fill = tb.fill + newTokens
-				tb.time = now
-			}
+		tb.wait.Reset(duration)
+		defer tb.wait.Stop()
 
-			if tb.fill > tb.size {
-				tb.fill = tb.size
+		select {
+		case <-ctx.Done():
+			return 0, ctx.Err()
+		case <-tb.wait.C:
+			n += tb.request(tokens - n)
+			if n > tokens {
+				tb.Return(n - tokens)
 			}
-
-			if tb.fill >= tokens {
-				tb.fill = tb.fill - tokens
-				rv = tokens
-			} else {
-				rv = tb.fill
-				tb.fill = 0
-			}
+			return tokens, nil
 		}
 	}
-
-	return rv
 }
 
+func (tb *TokenBucket) request(tokens uint64) uint64 {
+	switch {
+	case tb.rate == 0:
+		return min(tb.size, tokens)
+	case tb.fill >= tokens:
+		tb.fill -= tokens
+		return tokens
+	default:
+		now := time.Now()
+
+		if newTokens := tb.rate * uint64(now.Sub(tb.time).Nanoseconds()) / uint64(time.Second); newTokens > 0 {
+			tb.fill += newTokens
+			tb.time = now
+		}
+
+		tb.fill = min(tb.size, tb.fill)
+
+		if tb.fill >= tokens {
+			tb.fill -= tokens
+			return tokens
+		}
+
+		tokens = tb.fill
+		tb.fill = 0
+		return tokens
+	}
+}
+
+// Return allows unused tokens retrieved with Remove or RemoveWithContext to
+// refill the bucket.
 func (tb *TokenBucket) Return(tokens uint64) uint64 {
-	var rv uint64 = 0
-
-	if tb != nil && tb.fill < tb.size {
-		tb.fill = tb.fill + tokens
-
-		if tb.fill > tb.size {
-			rv = tokens - (tb.fill - tb.size)
-			tb.fill = tb.size
-		} else {
-			rv = tokens
-		}
+	switch {
+	case tokens == 0 || tb.fill == tb.size:
+		return 0
+	case tokens+tb.fill > tb.size:
+		tokens = tb.size - tb.fill
+		tb.fill = tb.size
+		return tokens
+	default:
+		tb.fill += tokens
+		return tokens
 	}
-
-	return rv
 }
